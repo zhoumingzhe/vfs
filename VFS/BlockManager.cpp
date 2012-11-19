@@ -166,3 +166,19 @@ void BlockManager::ZeroBlock( int blockid )
     m_pFile->Write(&buffer[0], m_Header.BlockSize);
 }
 
+void BlockManager::ReadBlockData( int blockid, std::vector<char>& data )
+{
+    data.resize(m_Header.BlockSize);
+    m_pFile->Seek(CalcOffset(blockid), IFile::S_Begin);
+    int ret = m_pFile->Read(&data[0], m_Header.BlockSize);
+    assert(ret == m_Header.BlockSize);
+}
+
+void BlockManager::WriteBlockData( int blockid, std::vector<char>& data )
+{
+    assert(data.size() == m_Header.BlockSize);
+    m_pFile->Seek(CalcOffset(blockid), IFile::S_Begin);
+    int ret = m_pFile->Write(&data[0], m_Header.BlockSize);
+    assert(ret == m_Header.BlockSize);
+}
+
