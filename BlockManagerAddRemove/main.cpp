@@ -26,7 +26,9 @@ int main()
 
     pMgr->RecycleBlock(4);
     pMgr->RecycleBlock(5);
+    int j = pMgr->AllocBlock();
     pMgr->RecycleBlock(6);
+    pMgr->RecycleBlock(j);
 
     pMgr->RecycleBlock(2);
     pMgr->RecycleBlock(3);

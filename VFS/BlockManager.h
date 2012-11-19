@@ -1,20 +1,6 @@
 #pragma once
 class IFile;
 #include <vector>
-struct BlockData
-{
-    struct BlockHeader
-    {
-        int Next;
-        int Prev;
-        int Begin;
-        int Reserved;
-        BlockHeader():Next(-1),Prev(-1),Begin(-1),Reserved(0)
-        {}
-    };
-    BlockHeader m_Header;
-    std::vector<char> m_Data;
-};
 
 class BlockManager
 {
@@ -46,16 +32,19 @@ public:
     int AllocBlock();
     void RecycleBlock(int blockid);
 
-    int AllocNewBlock();
-    int AllocExistBlock();
+    void ReadEmptyBlockHeader(int blockid, int &header);
+    void WriteEmptyBlockHeader(int blockid, int header);
 
-    void ReadBlockHeader(int blockid, BlockData::BlockHeader& header);
-    void WriteBlockHeader(int blockid, const BlockData::BlockHeader &header);
-    void ReadBlock(int blockid, BlockData& data);
-    void WriteBlock(int blockid, const BlockData& data);
+    void ZeroBlock(int blockid);
+
+    void ReadBlockData(int blockid, std::vector<char>& data);
+    void WriteBlockData(int blockid, std::vector<char>& data);
 private:
     void CreateNew(int blocksize);
     void LoadExist(int blocksize);
+
+    int AllocNewBlock();
+    int AllocExistBlock();
 
     int CalcOffset(int blockid);
     IFile* m_pFile;

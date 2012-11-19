@@ -85,9 +85,9 @@ void BlockManager::RecycleBlock( int blockid )
         --m_Header.Blocks;
         while (m_Header.Unused == m_Header.Blocks -1 && m_Header.Unused >= 0)
         {
-            BlockData::BlockHeader header;
-            ReadBlockHeader(m_Header.Unused, header);
-            m_Header.Unused = header.Next;
+            int header = -1;
+            ReadEmptyBlockHeader(m_Header.Unused, header);
+            m_Header.Unused = header;
             --m_Header.Blocks;
             assert(m_Header.Blocks >=0);
             assert(m_Header.Unused < m_Header.Blocks);
@@ -99,9 +99,8 @@ void BlockManager::RecycleBlock( int blockid )
     {
         if(blockid > m_Header.Unused)
         {
-            BlockData::BlockHeader header;
-            header.Next = m_Header.Unused;
-            WriteBlockHeader(blockid, header);
+            int header = m_Header.Unused;
+            WriteEmptyBlockHeader(blockid, header);
             m_Header.Unused = blockid;
             FlushHeader();
         }
@@ -109,29 +108,27 @@ void BlockManager::RecycleBlock( int blockid )
         {
             int unused = m_Header.Unused;
             int found = 0;
-            BlockData::BlockHeader header;
+            int header = -1;
             while (blockid < unused)
             {
-                ReadBlockHeader(unused, header);
+                ReadEmptyBlockHeader(unused, header);
                 found = unused;
-                unused = header.Next;
+                unused = header;
             }
-            header.Next = blockid;
-            WriteBlockHeader(found, header);
-            header.Next = unused;
-            WriteBlockHeader(blockid, header);
+            WriteEmptyBlockHeader(found, blockid);
+            WriteEmptyBlockHeader(blockid, unused);
         }
     }
 }
 
-void BlockManager::ReadBlockHeader( int blockid, BlockData::BlockHeader& header )
+void BlockManager::ReadEmptyBlockHeader( int blockid, int &header )
 {
     assert(blockid < m_Header.Blocks && "out of range");
     m_pFile->Seek(CalcOffset(blockid), IFile::S_Begin);
     m_pFile->Read(&header, sizeof(header));
 }
 
-void BlockManager::WriteBlockHeader( int blockid, const BlockData::BlockHeader &header )
+void BlockManager::WriteEmptyBlockHeader( int blockid, int header )
 {
     assert(blockid < m_Header.Blocks && "out of range");
     m_pFile->Seek(CalcOffset(blockid), IFile::S_Begin);
@@ -144,11 +141,6 @@ int BlockManager::AllocNewBlock()
     assert(m_Header.Unused < 0);
     int blockid = m_Header.Blocks++;
     m_pFile->ReserveSpace(CalcOffset(m_Header.Blocks));
-    BlockData::BlockHeader header;
-    header.Begin = blockid;
-    header.Next = blockid;
-    header.Prev = blockid;
-    WriteBlockHeader(blockid, header);
     FlushHeader();
     return blockid;
 }
@@ -158,14 +150,19 @@ int BlockManager::AllocExistBlock()
     CheckHeader();
     assert(m_Header.Unused >= 0);
     int result = m_Header.Unused;
-    BlockData::BlockHeader header;
-    ReadBlockHeader(result, header);
-    m_Header.Unused = header.Next;
-    header.Begin = result;
-    header.Next = result;
-    header.Prev = result;
-    WriteBlockHeader(result, header);
+    int header;
+    ReadEmptyBlockHeader(result, header);
+    m_Header.Unused = header;
+    header = result;
+    ZeroBlock(result);
     FlushHeader();
     return result;
+}
+
+void BlockManager::ZeroBlock( int blockid )
+{
+    m_pFile->Seek(CalcOffset(blockid), IFile::S_Begin);
+    std::vector<char>buffer(m_Header.BlockSize);//performance penalties
+    m_pFile->Write(&buffer[0], m_Header.BlockSize);
 }
 

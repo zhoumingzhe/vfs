@@ -11,6 +11,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="BlockFS.cpp" />
     <ClCompile Include="BlockManager.cpp" />
     <ClCompile Include="DiskFile.cpp" />
     <ClCompile Include="IFile.cpp" />
@@ -18,6 +19,7 @@
     <ClCompile Include="UnpackedFile.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="BlockFS.h" />
     <ClInclude Include="BlockManager.h" />
     <ClInclude Include="DiskFile.h" />
     <ClInclude Include="IFile.h" />
