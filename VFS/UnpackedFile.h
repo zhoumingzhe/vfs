@@ -1,10 +1,11 @@
 #pragma once
 #include "IFile.h"
+class BlockFS;
 class UnpackedFile :
     public IFile
 {
 public:
-    UnpackedFile(void);
+    UnpackedFile(BlockFS* pFS, OpenMode mode);
     ~UnpackedFile(void);
 
     virtual int Read(void* buffer, int size);
@@ -13,6 +14,7 @@ public:
     virtual int GetSize();
     virtual int ReserveSpace(int size);
 
-
+private:
+    BlockFS* m_pFS;
 };
 
