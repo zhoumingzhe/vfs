@@ -83,7 +83,7 @@ int DiskFile::Seek( int pos, enum SeekMode mode )
 
 int DiskFile::GetSize()
 {
-    return GetFileSize(m_hFile,NULL);
+    return GetFileSize(m_hFile, NULL);
 }
 
 int DiskFile::ReserveSpace( int size )

@@ -1,11 +1,11 @@
 #pragma once
 #include "IFile.h"
-class BlockFS;
+#include "BlockFS.h"
 class UnpackedFile :
     public IFile
 {
 public:
-    UnpackedFile(BlockFS* pFS, OpenMode mode);
+    UnpackedFile(BlockFS* pFS, OpenMode mode, int beginid);
     ~UnpackedFile(void);
 
     virtual int Read(void* buffer, int size);
@@ -15,6 +15,11 @@ public:
     virtual int ReserveSpace(int size);
 
 private:
+    bool LoadCache();
     BlockFS* m_pFS;
+    int m_Current;
+    BlockCache m_Cache;
+    int m_Blockid;
+    int m_Beginid;
 };
 

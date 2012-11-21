@@ -32,7 +32,7 @@ IFile* BlockFS::CreateBlockFile( const char* name, IFile::OpenMode mode )
 
 IFile* BlockFS::CreateBlockFile( int blockid, IFile::OpenMode mode )
 {
-    IFile* pFile = new UnpackedFile(this, mode);
+    IFile* pFile = new UnpackedFile(this, mode, blockid);
     m_opened.insert(pFile);
     return pFile;
 }
@@ -42,4 +42,15 @@ void BlockFS::OnFileDestory( IFile* pFile )
     std::set<IFile*>::iterator it = m_opened.find(pFile);
     assert(it != m_opened.end());
     m_opened.erase(it);
+}
+
+bool BlockFS::LoadCache( int id, BlockCache& cache )
+{
+    std::vector<char> data;
+    m_pMgr->ReadBlockData(id, data);
+    int headersize = sizeof(cache.header);
+    //2 memory copies, performance penalties
+    memcpy(&cache.header, &data[0], headersize);
+    memcpy(&cache.data[0], &data[headersize], data.size() - headersize);
+    return true;
 }
