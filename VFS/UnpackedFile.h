@@ -1,6 +1,13 @@
 #pragma once
 #include "IFile.h"
 #include "BlockFS.h"
+
+struct UnpackedFileHeader
+{
+    int refcount;
+    int datasize;
+};
+
 class UnpackedFile :
     public IFile
 {
@@ -15,11 +22,23 @@ public:
     virtual int ReserveSpace(int size);
 
 private:
-    bool LoadCache();
+
+    int GetRefCount();
+    void SetRefCount(int refcount);
+
+    int GetDataSize();
+    void SetDataSize(int datasize);
+
+    void FlushHeaderToCache();
     BlockFS* m_pFS;
-    int m_Current;
-    BlockCache m_Cache;
-    int m_Blockid;
-    int m_Beginid;
+
+    const int m_Beginid; //begin block id
+
+    UnpackedFileHeader m_Header; //Header in the first block
+
+    int m_Current; //current offset
+
+    int m_Cacheid;      //cached block id
+    BlockCache m_Cache; //cached block
 };
 

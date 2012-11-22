@@ -182,3 +182,17 @@ void BlockManager::WriteBlockData( int blockid, std::vector<char>& data )
     assert(ret == m_Header.BlockSize);
 }
 
+void BlockManager::ReadPartialBlockData( int blockid, void* buffer, int offset, int length )
+{
+    m_pFile->Seek(CalcOffset(blockid) + offset, IFile::S_Begin);
+    int result = m_pFile->Read(buffer, length);
+    assert(result == length);
+}
+
+void BlockManager::WritePartialBlockData( int blockid, void* buffer, int offset, int length )
+{
+    m_pFile->Seek(CalcOffset(blockid) + offset, IFile::S_Begin);
+    int result = m_pFile->Write(buffer, length);
+    assert(result == length);
+}
+

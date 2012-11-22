@@ -39,6 +39,9 @@ public:
 
     void ReadBlockData(int blockid, std::vector<char>& data);
     void WriteBlockData(int blockid, std::vector<char>& data);
+
+    void ReadPartialBlockData(int blockid, void* buffer, int offset, int length);
+    void WritePartialBlockData(int blockid, void* buffer, int offset, int length);
 private:
     void CreateNew(int blocksize);
     void LoadExist(int blocksize);

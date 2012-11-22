@@ -7,7 +7,6 @@ class BlockManager;
 
 struct BlockHeader
 {
-    int begin;
     int next;
     int prev;
 };
@@ -29,6 +28,10 @@ public:
     IFile* CreateBlockFile(int blockid, IFile::OpenMode mode);
     void OnFileDestory(IFile* pFile);
     bool LoadCache(int id, BlockCache& cache);
+
+    bool LoadBlockHeader(int id, BlockHeader &header);
+    bool LoadBlockData(int id, std::vector<char>& data);
+
 private:
     BlockManager *m_pMgr;
     std::set<IFile*> m_opened;

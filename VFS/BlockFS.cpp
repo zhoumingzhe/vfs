@@ -46,11 +46,20 @@ void BlockFS::OnFileDestory( IFile* pFile )
 
 bool BlockFS::LoadCache( int id, BlockCache& cache )
 {
-    std::vector<char> data;
-    m_pMgr->ReadBlockData(id, data);
-    int headersize = sizeof(cache.header);
-    //2 memory copies, performance penalties
-    memcpy(&cache.header, &data[0], headersize);
-    memcpy(&cache.data[0], &data[headersize], data.size() - headersize);
+    LoadBlockHeader(id, cache.header);
+    LoadBlockData(id, cache.data);
+    return true;
+}
+
+bool BlockFS::LoadBlockHeader( int id, BlockHeader &header )
+{
+    m_pMgr->ReadPartialBlockData(id, &header, 0, sizeof(header));
+    return true;
+}
+
+bool BlockFS::LoadBlockData( int id, std::vector<char>& data )
+{
+    data.resize(m_pMgr->GetBlockSize() - sizeof(BlockHeader));
+    m_pMgr->ReadPartialBlockData(id, &data[0], sizeof(BlockHeader), data.size());
     return true;
 }
