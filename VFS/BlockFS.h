@@ -28,10 +28,16 @@ public:
     IFile* CreateBlockFile(int blockid, IFile::OpenMode mode);
     void OnFileDestory(IFile* pFile);
     bool LoadCache(int id, BlockCache& cache);
+    bool FlushCache(int id, BlockCache& cache);
 
     bool LoadBlockHeader(int id, BlockHeader &header);
     bool LoadBlockData(int id, std::vector<char>& data);
 
+    bool FlushBlockHeader(int id, BlockHeader &header);
+    bool FlushBlockData(int id, std::vector<char>& data);
+
+    int GetBlockDataSize();
+    int AllocBlock(const BlockHeader& header);
 private:
     BlockManager *m_pMgr;
     std::set<IFile*> m_opened;

@@ -29,15 +29,19 @@ private:
     int GetDataSize();
     void SetDataSize(int datasize);
 
+    int CalcOffsetInCache(int offset);
     void FlushHeaderToCache();
+    bool AdvancedToNextCache();
     BlockFS* m_pFS;
 
     const int m_Beginid; //begin block id
 
     UnpackedFileHeader m_Header; //Header in the first block
 
-    int m_Current; //current offset
+    int m_Current; //current offset in the file
 
+    bool m_CacheChanged; //if this is true, cache have to be write back
+    int m_CacheSeq; //the sequence of the current cache
     int m_Cacheid;      //cached block id
     BlockCache m_Cache; //cached block
 };
