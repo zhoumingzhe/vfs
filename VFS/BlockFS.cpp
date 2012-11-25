@@ -64,13 +64,13 @@ bool BlockFS::LoadBlockData( int id, std::vector<char>& data )
     return true;
 }
 
-bool BlockFS::FlushBlockHeader( int id, BlockHeader &header )
+bool BlockFS::FlushBlockHeader( int id, const BlockHeader &header )
 {
     m_pMgr->WritePartialBlockData(id, &header, 0, sizeof(header));
     return true;
 }
 
-bool BlockFS::FlushBlockData( int id, std::vector<char>& data )
+bool BlockFS::FlushBlockData( int id, const std::vector<char>& data )
 {
     assert(data.size() == m_pMgr->GetBlockSize() - sizeof(BlockHeader));
     m_pMgr->WritePartialBlockData(id, &data[0], sizeof(BlockHeader), data.size());
@@ -93,4 +93,5 @@ int BlockFS::AllocBlock(const BlockHeader& header)
 {
     int i = m_pMgr->AllocBlock();
     FlushBlockHeader(i, header);
+    return i;
 }

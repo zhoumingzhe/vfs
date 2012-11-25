@@ -33,8 +33,8 @@ public:
     bool LoadBlockHeader(int id, BlockHeader &header);
     bool LoadBlockData(int id, std::vector<char>& data);
 
-    bool FlushBlockHeader(int id, BlockHeader &header);
-    bool FlushBlockData(int id, std::vector<char>& data);
+    bool FlushBlockHeader(int id, const BlockHeader &header);
+    bool FlushBlockData(int id, const std::vector<char>& data);
 
     int GetBlockDataSize();
     int AllocBlock(const BlockHeader& header);

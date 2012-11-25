@@ -189,7 +189,7 @@ void BlockManager::ReadPartialBlockData( int blockid, void* buffer, int offset, 
     assert(result == length);
 }
 
-void BlockManager::WritePartialBlockData( int blockid, void* buffer, int offset, int length )
+void BlockManager::WritePartialBlockData( int blockid, const void* buffer, int offset, int length )
 {
     m_pFile->Seek(CalcOffset(blockid) + offset, IFile::S_Begin);
     int result = m_pFile->Write(buffer, length);
