@@ -27,7 +27,7 @@ DiskFile::DiskFile(const char* name, OpenMode mode):m_eMode(mode)
     default:
         assert(0);
     }
-    m_hFile = CreateFileA(name, access, FILE_SHARE_READ, NULL, create,
+    m_hFile = CreateFileA(name, access, FILE_SHARE_READ|FILE_SHARE_WRITE, NULL, create,
         FILE_ATTRIBUTE_NORMAL, NULL);
 
     if(m_hFile == INVALID_HANDLE_VALUE)

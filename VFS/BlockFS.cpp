@@ -21,6 +21,7 @@ BlockFS::BlockFS(BlockManager* pMgr, IFile::OpenMode mode):m_pMgr(pMgr),m_pFirst
 
 BlockFS::~BlockFS(void)
 {
+    delete m_pFirst;
     assert(m_opened.empty()&&"not all file closed");
 }
 

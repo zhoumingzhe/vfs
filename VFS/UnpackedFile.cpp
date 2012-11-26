@@ -22,11 +22,13 @@ UnpackedFile::UnpackedFile(BlockFS* pFS, OpenMode mode, int beginid):
 
 UnpackedFile::~UnpackedFile(void)
 {
+    FlushCache();
     m_pFS->OnFileDestory(this);
 }
 
 int UnpackedFile::Read( void* buffer, int size )
 {
+    assert(0&&"not implemented");
     //out of range
     if(m_Current >= m_Header.datasize)
         return 0;
@@ -51,6 +53,9 @@ int UnpackedFile::Read( void* buffer, int size )
 
 int UnpackedFile::Write( const void* buffer, int size )
 {
+    assert(size>=0);
+    if(size <= 0)
+        return 0;
     // 3. load the cache to be written
     // 4. mark the cache as modified
     // 5. write data in one cache
@@ -58,29 +63,56 @@ int UnpackedFile::Write( const void* buffer, int size )
     //////////////////////////////////////////////////////////////////////////
 
     // 1. seek to right position,allocate disk space if necessary
-    int offset = CalcOffsetInCache(m_Current);
+    int offset = CalcOffsetInCurrentCache(m_Current);
+    assert(offset >= 0);
     int blocksize = m_pFS->GetBlockDataSize();
     if (offset >= blocksize)
     {
-        if(m_CacheChanged)
-        {
-            m_pFS->FlushCache(m_Cacheid, m_Cache);
-        }
+        FlushCache();
         while (offset >= blocksize)
         {
-            //we reach the last block
+            //we reach the last block,
+            //allocate blocks at the end
             if(m_Cache.header.next == m_Beginid)
             {
-                BlockHeader header = {m_Beginid, m_Cacheid};
-                int i = m_pFS->AllocBlock(header);
-
+                m_Cacheid = AppendBlock(m_Beginid, m_Cacheid);
             }
 
-            m_Cacheid = m_Cache.header.next;
             ++m_CacheSeq;
+            //need some optimization, just load the block header
             m_pFS->LoadCache(m_Cacheid, m_Cache);
-            return true;
+            offset = CalcOffsetInCurrentCache(m_Current);
         }
+    }
+    while (offset + size > blocksize)
+    {
+        //Write in cache
+        assert(offset < blocksize);
+        int size_to_write = blocksize - offset;
+        assert((int)m_Cache.data.size() >= offset + size_to_write);
+        memcpy(&m_Cache.data[offset], buffer, size_to_write);
+        m_CacheChanged = true;
+        FlushCache();
+
+        //advance data
+        m_Current += size_to_write;
+        buffer = (char*)buffer + size_to_write;
+        size -= size_to_write;
+
+        //we reach the last block,
+        //allocate blocks at the end
+        if(m_Cache.header.next == m_Beginid)
+        {
+            m_Cacheid = AppendBlock(m_Beginid, m_Cacheid);
+        }
+        else
+        {
+            m_Cacheid = m_Cache.header.next;
+        }
+        ++m_CacheSeq;
+        m_pFS->LoadCache(m_Cacheid, m_Cache);
+        offset = CalcOffsetInCurrentCache(m_Current);
+        assert(offset==0);
     }
     return 0;
 }
@@ -99,16 +131,19 @@ int UnpackedFile::Seek( int pos, enum SeekMode mode )
         assert(0);
         break;
     }
+    assert(0&&"not implemented");
     return 0;
 }
 
 int UnpackedFile::GetSize()
 {
+    assert(0&&"not implemented");
     return 0;
 }
 
 int UnpackedFile::ReserveSpace( int size )
 {
+    assert(0&&"not implemented");
     return 0;
 }
 
@@ -146,10 +181,7 @@ void UnpackedFile::FlushHeaderToCache()
 
 bool UnpackedFile::AdvancedToNextCache()
 {
-    if(m_CacheChanged)
-    {
-        m_pFS->FlushCache(m_Cacheid, m_Cache);
-    }
+    FlushCache();
 
     //we reach the last block
     if(m_Cache.header.next == m_Beginid)
@@ -161,7 +193,34 @@ bool UnpackedFile::AdvancedToNextCache()
     return true;
 }
 
-int UnpackedFile::CalcOffsetInCache( int offset )
+int UnpackedFile::CalcOffsetInCurrentCache( int offset )
 {
     return offset + sizeof(UnpackedFileHeader) - m_CacheSeq*m_pFS->GetBlockDataSize();
+}
+
+void UnpackedFile::FlushCache()
+{
+    if(m_CacheChanged)
+    {
+        m_pFS->FlushCache(m_Cacheid, m_Cache);
+        m_CacheChanged = false;
+    }
+}
+
+int UnpackedFile::AppendBlock( int begin, int end )
+{
+    BlockHeader header = {begin, end};
+    int i = m_pFS->AllocBlock(header);
+
+    m_pFS->LoadBlockHeader(end, header);
+    assert(header.next == begin);
+    header.next = i;
+    m_pFS->FlushBlockHeader(end, header);
+
+    m_pFS->LoadBlockHeader(begin, header);
+    assert(header.prev == end);
+    header.prev = i;
+    m_pFS->FlushBlockHeader(begin, header);
+
+    return i;
 }

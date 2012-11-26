@@ -51,7 +51,6 @@ private:
 
     int CalcOffset(int blockid);
     IFile* m_pFile;
-
     FileHeader m_Header;
 };
 

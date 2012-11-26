@@ -38,6 +38,9 @@ public:
 
     int GetBlockDataSize();
     int AllocBlock(const BlockHeader& header);
+
+    //test only;
+    IFile* First() const { return m_pFirst; }
 private:
     BlockManager *m_pMgr;
     std::set<IFile*> m_opened;

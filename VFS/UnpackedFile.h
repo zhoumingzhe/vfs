@@ -29,9 +29,12 @@ private:
     int GetDataSize();
     void SetDataSize(int datasize);
 
-    int CalcOffsetInCache(int offset);
+    int CalcOffsetInCurrentCache(int offset);
     void FlushHeaderToCache();
     bool AdvancedToNextCache();
+
+    void FlushCache();
+    int AppendBlock(int begin, int end);
     BlockFS* m_pFS;
 
     const int m_Beginid; //begin block id
