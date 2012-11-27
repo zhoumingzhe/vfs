@@ -31,6 +31,7 @@ private:
 
     int CalcOffsetInCurrentCache(int offset);
     void FlushHeaderToCache();
+    void FlushHeaderToDisk();
     bool AdvancedToNextCache();
 
     void FlushCache();

@@ -7,14 +7,16 @@
 int main()
 {
     _CrtSetDbgFlag ( _CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF );
-    IFile *pFile = OpenDiskFile("test.pkg", IFile::O_Truncate);
-    BlockManager* pMgr = new BlockManager(pFile, true, 1024);
-    BlockFS *pFS = new BlockFS(pMgr, IFile::O_Truncate);
+    IFile::OpenMode mode = IFile::O_Truncate;
+    IFile *pFile = OpenDiskFile("test.pkg", mode);
+    BlockManager* pMgr = new BlockManager(pFile, mode==IFile::O_Truncate, 1024);
+    BlockFS *pFS = new BlockFS(pMgr, mode);
 
-    char* buffer = new char[4096];
-    for(int i = 0; i<4096; ++i)
+    const int size = 1008;
+    char* buffer = new char[size];
+    for(int i = 0; i<size; ++i)
         buffer[i] = i%10;
-    pFS->First()->Write(buffer, 4096);
+    pFS->First()->Write(buffer, size);
     delete[]buffer;
 
     delete pFS;

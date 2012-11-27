@@ -56,16 +56,12 @@ int UnpackedFile::Write( const void* buffer, int size )
     assert(size>=0);
     if(size <= 0)
         return 0;
-    // 3. load the cache to be written
-    // 4. mark the cache as modified
-    // 5. write data in one cache
-    // 6. if more data flush and goto 3
-    //////////////////////////////////////////////////////////////////////////
 
-    // 1. seek to right position,allocate disk space if necessary
     int offset = CalcOffsetInCurrentCache(m_Current);
     assert(offset >= 0);
     int blocksize = m_pFS->GetBlockDataSize();
+
+    //Seek to the right position
     if (offset >= blocksize)
     {
         FlushCache();
@@ -84,11 +80,14 @@ int UnpackedFile::Write( const void* buffer, int size )
             offset = CalcOffsetInCurrentCache(m_Current);
         }
     }
-    while (offset + size > blocksize)
+
+    //Write in Loop
+    while (size > 0)
     {
         //Write in cache
         assert(offset < blocksize);
-        int size_to_write = blocksize - offset;
+        int size_to_write = (blocksize - offset)<size?
+            (blocksize - offset):size;
         assert((int)m_Cache.data.size() >= offset + size_to_write);
         memcpy(&m_Cache.data[offset], buffer, size_to_write);
         m_CacheChanged = true;
@@ -96,25 +95,35 @@ int UnpackedFile::Write( const void* buffer, int size )
 
         //advance data
         m_Current += size_to_write;
-        buffer = (char*)buffer + size_to_write;
         size -= size_to_write;
 
-        //we reach the last block,
-        //allocate blocks at the end
-        if(m_Cache.header.next == m_Beginid)
+        if(size > 0)
         {
-            m_Cacheid = AppendBlock(m_Beginid, m_Cacheid);
+            buffer = (char*)buffer + size_to_write;
+            //we reach the last block,
+            //allocate blocks at the end
+            if(m_Cache.header.next == m_Beginid)
+            {
+                m_Cacheid = AppendBlock(m_Beginid, m_Cacheid);
+            }
+            else
+            {
+                m_Cacheid = m_Cache.header.next;
+            }
+            ++m_CacheSeq;
+            m_pFS->LoadCache(m_Cacheid, m_Cache);
+            offset = CalcOffsetInCurrentCache(m_Current);
+            assert(offset==0);
         }
-        else
-        {
-            m_Cacheid = m_Cache.header.next;
-        }
-        ++m_CacheSeq;
-        m_pFS->LoadCache(m_Cacheid, m_Cache);
-        offset = CalcOffsetInCurrentCache(m_Current);
-        assert(offset==0);
     }
-    return 0;
+
+    if(m_Current > GetDataSize())
+    {
+        SetDataSize(m_Current);
+        FlushHeaderToCache();
+    }
+
+    return size;
 }
 
 int UnpackedFile::Seek( int pos, enum SeekMode mode )
@@ -223,4 +232,17 @@ int UnpackedFile::AppendBlock( int begin, int end )
     m_pFS->FlushBlockHeader(begin, header);
 
     return i;
+}
+
+void UnpackedFile::FlushHeaderToDisk()
+{
+    if(m_Cacheid != m_Beginid)
+    {
+        m_pFS->LoadCache(m_Beginid, m_Cache);
+        m_Cacheid = m_Beginid;
+        FlushHeaderToCache();
+    }
+    assert(m_Beginid == m_Cacheid);
+    m_pFS->FlushBlockData(m_Cacheid, m_Cache.data);
+
 }
