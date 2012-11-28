@@ -281,6 +281,7 @@ int UnpackedFile::AppendBlock( int begin, int end )
 
 void UnpackedFile::FlushHeaderToDisk()
 {
+    //todo: not necessarily change the cache state
     if(GetCacheid() != m_Beginid)
     {
         m_pFS->LoadCache(m_Beginid, m_Cache);
