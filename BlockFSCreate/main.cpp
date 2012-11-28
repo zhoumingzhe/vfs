@@ -12,11 +12,21 @@ int main()
     BlockManager* pMgr = new BlockManager(pFile, mode==IFile::O_Truncate, 1024);
     BlockFS *pFS = new BlockFS(pMgr, mode);
 
-    const int size = 1008;
+    const int size = 2048;
     char* buffer = new char[size];
     for(int i = 0; i<size; ++i)
         buffer[i] = i%10;
-    pFS->First()->Write(buffer, size);
+    int size_write = pFS->First()->Write(buffer, size);
+    assert(size==size_write);
+
+    int size_seek = pFS->First()->Seek(0, IFile::S_Begin);
+    assert(size == size_seek);
+    char* buffer1 = new char[size];
+    int size_read = pFS->First()->Read(buffer1, size);
+    assert(size_read == size);
+    int cmp_result = memcmp(buffer1, buffer, size);
+    assert(!cmp_result);
+    delete[]buffer1;
     delete[]buffer;
 
     delete pFS;

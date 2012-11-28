@@ -32,10 +32,13 @@ private:
     int CalcOffsetInCurrentCache(int offset);
     void FlushHeaderToCache();
     void FlushHeaderToDisk();
-    bool AdvancedToNextCache();
 
     void FlushCache();
     int AppendBlock(int begin, int end);
+
+    void SetCacheState(int seq, int id);
+    int GetCacheid(){return m_Cacheid;}
+    int GetCacheSeq(){return m_CacheSeq;}
     BlockFS* m_pFS;
 
     const int m_Beginid; //begin block id
