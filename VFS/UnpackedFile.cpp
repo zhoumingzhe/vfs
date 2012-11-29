@@ -200,6 +200,8 @@ int UnpackedFile::Seek( int pos, enum SeekMode mode )
         assert(0&&"Wrong parameter");
         break;
     }
+    SetCacheState(0, 0);
+    m_pFS->LoadCache(GetCacheid(), m_Cache);
     return old;
 }
 

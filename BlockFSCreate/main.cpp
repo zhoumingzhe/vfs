@@ -26,6 +26,15 @@ int main()
     assert(size_read == size);
     int cmp_result = memcmp(buffer1, buffer, size);
     assert(!cmp_result);
+
+    for(int i = 0; i<4096; ++i)
+    {
+        int offset = rand()%size;
+        pFS->First()->Seek(offset, IFile::S_Begin);
+        char c;
+        pFS->First()->Read(&c, sizeof(c));
+        assert(c==offset%10);
+    }
     delete[]buffer1;
     delete[]buffer;
 
