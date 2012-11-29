@@ -21,19 +21,21 @@ public:
     virtual int GetSize();
     virtual int ReserveSpace(int size);
 
-private:
-
     int GetRefCount();
     void SetRefCount(int refcount);
 
     int GetDataSize();
     void SetDataSize(int datasize);
 
+    void FlushCache();
+
+    void FlushHeaderToDisk();
+private:
+
+
     int CalcOffsetInCurrentCache(int offset);
     void FlushHeaderToCache();
-    void FlushHeaderToDisk();
 
-    void FlushCache();
     int AppendBlock(int begin, int end);
 
     void SetCacheState(int seq, int id);

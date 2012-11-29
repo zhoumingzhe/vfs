@@ -1,5 +1,6 @@
 #include <crtdbg.h>
 #include <assert.h>
+#include <time.h>
 #include "../VFS/BlockManager.h"
 #include "../VFS/IFile.h"
 #include "../VFS/BlockFS.h"
@@ -18,9 +19,17 @@ int main()
         buffer[i] = i%10;
     int size_write = pFS->First()->Write(buffer, size);
     assert(size==size_write);
+    srand((unsigned)time(0));
+    for(int i = 0; i<4096; ++i)
+    {
+        int offset = rand()%size;
+        pFS->First()->Seek(offset, IFile::S_Begin);
+        char c;
+        pFS->First()->Read(&c, sizeof(c));
+        assert(c==offset%10);
+    }
 
-    int size_seek = pFS->First()->Seek(0, IFile::S_Begin);
-    assert(size == size_seek);
+    pFS->First()->Seek(0, IFile::S_Begin);
     char* buffer1 = new char[size];
     int size_read = pFS->First()->Read(buffer1, size);
     assert(size_read == size);

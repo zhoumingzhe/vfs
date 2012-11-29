@@ -33,6 +33,9 @@
     <ClCompile Include="BlockFS.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="GUtMd5.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="DiskFile.h">
@@ -51,6 +54,12 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="BlockFS.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="GUtMd5.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="GUtMd5Config.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

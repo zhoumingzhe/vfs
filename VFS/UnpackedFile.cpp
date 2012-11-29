@@ -207,8 +207,7 @@ int UnpackedFile::Seek( int pos, enum SeekMode mode )
 
 int UnpackedFile::GetSize()
 {
-    assert(0&&"not implemented");
-    return 0;
+    return GetDataSize();
 }
 
 int UnpackedFile::ReserveSpace( int size )
