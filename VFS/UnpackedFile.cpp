@@ -47,7 +47,7 @@ int UnpackedFile::Read( void* buffer, int size )
             int cacheid;
             if(m_Cache.header.next == m_Beginid)
             {
-                cacheid = AppendBlock(m_Beginid, GetCacheid());
+                return 0;
             }
             else
             {
@@ -60,10 +60,10 @@ int UnpackedFile::Read( void* buffer, int size )
         }
     }
     int size_left = size;
-    //Write in Loop
+    //read in Loop
     while (size_left > 0)
     {
-        //Write in cache
+        //read in cache
         assert(offset < blocksize);
         int size_to_read = (blocksize - offset)<size_left?
             (blocksize - offset):size_left;
