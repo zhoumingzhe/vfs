@@ -40,18 +40,21 @@ int UnpackedFile::Read( void* buffer, int size )
     if (offset >= blocksize)
     {
         FlushCache();
+        int cacheid = -1;
         while (offset >= blocksize)
         {
             //we reach the last block,
             //nothing to read
-            int cacheid = m_pFS->GetNextBlockId(m_Cacheid, m_Beginid);
+            cacheid = m_pFS->GetNextBlockId(m_Cacheid, m_Beginid);
             if(cacheid == -1)
-                return 0;
+                break;
             SetCacheState(cacheid, GetCacheSeq()+1);
             //need some optimization, just load the block header
             m_pFS->LoadBlockData(GetCacheid(), m_Cache);
             offset = CalcOffsetInCurrentCache(m_Current);
         }
+        if(cacheid == -1)
+            return 0;
     }
     int size_left = size;
     //read in Loop
