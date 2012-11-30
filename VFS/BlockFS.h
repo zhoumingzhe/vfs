@@ -64,6 +64,10 @@ public:
     int GetBlockDataSize();
     int AllocBlock(const BlockHeader& header);
 
+    int GetNextBlockId(int blockid, int beginid);
+    int AppendOrGetNextBlockId(int blockid, int beginid);
+
+    int AppendBlock(int end, int begin);
     //test only;
     IFile* First() const { return m_pFirst; }
 private:

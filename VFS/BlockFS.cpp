@@ -209,3 +209,46 @@ UnpackedFile* BlockFS::OpenUnpackedFile( const char* name )
     assert(strcmp(e.name, name)==0);
     return CreateBlockFile(e.start_id, IFile::O_ReadOnly);
 }
+
+int BlockFS::GetNextBlockId( int blockid, int beginid )
+{
+    assert(blockid<=m_pMgr->GetBlocks());
+    assert(beginid<=m_pMgr->GetBlocks());
+    BlockHeader header;
+    LoadBlockHeader(blockid, header);
+
+    if(header.next == beginid)
+        return -1;
+    else
+        return header.next;
+}
+
+int BlockFS::AppendOrGetNextBlockId( int blockid, int beginid )
+{
+    assert(blockid<=m_pMgr->GetBlocks());
+    assert(beginid<=m_pMgr->GetBlocks());
+    BlockHeader header;
+    LoadBlockHeader(blockid, header);
+    if(header.next == beginid)
+        return AppendBlock(blockid, beginid);
+    else
+        return header.next;
+}
+
+int BlockFS::AppendBlock( int end, int begin )
+{
+    BlockHeader header = {begin, end};
+    int i = AllocBlock(header);
+
+    LoadBlockHeader(end, header);
+    assert(header.next == begin);
+    header.next = i;
+    FlushBlockHeader(end, header);
+
+    LoadBlockHeader(begin, header);
+    assert(header.prev == end);
+    header.prev = i;
+    FlushBlockHeader(begin, header);
+
+    return i;
+}

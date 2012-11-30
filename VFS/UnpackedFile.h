@@ -1,7 +1,8 @@
 #pragma once
+#include <vector>
 #include "IFile.h"
-#include "BlockFS.h"
 
+class BlockFS;
 struct UnpackedFileHeader
 {
     int refcount;
@@ -36,11 +37,11 @@ private:
     int CalcOffsetInCurrentCache(int offset);
     void FlushHeaderToCache();
 
-    int AppendBlock(int begin, int end);
-
     void SetCacheState(int seq, int id);
     int GetCacheid(){return m_Cacheid;}
     int GetCacheSeq(){return m_CacheSeq;}
+
+
     BlockFS* m_pFS;
 
     const int m_Beginid; //begin block id
@@ -52,6 +53,6 @@ private:
     bool m_CacheChanged; //if this is true, cache have to be write back
     int m_CacheSeq; //the sequence of the current cache
     int m_Cacheid;      //cached block id
-    BlockCache m_Cache; //cached block
+    std::vector<char> m_Cache; //cached block
 };
 
