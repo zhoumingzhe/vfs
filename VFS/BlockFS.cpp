@@ -141,6 +141,7 @@ void BlockFS::AddUnpackedFile( const char* name, char* data, int length )
     BlockFileEntry e;
     GetMD5CheckSum((unsigned char*)data, (unsigned)length, e.index.md5);
     e.index.size = length;
+    e.compress_method = BlockFileEntry::compress_uncompressed;
     strcpy_s(e.name, name);
 
     //if same md5 and size exist, we consider they're the same cotent;

@@ -33,8 +33,12 @@ struct BlockFileEntry
 {
     static const int max_length = 256;
 
+    static const int compress_uncompressed = 0;
+    static const int compress_zlib = 1;
+
     char name[max_length];
     int start_id;
+    int compress_method;
     MD5Index index;
     BlockFileEntry();
 };
