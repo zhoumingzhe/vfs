@@ -32,7 +32,7 @@ int UnpackedFile::Read( void* buffer, int size )
     if(size <= 0)
         return 0;
 
-    int offset = CalcOffsetInCurrentCache(m_Current);
+    int offset = CalcOffsetInCache(m_Current, GetCacheSeq());
     assert(offset >= 0);
     int blocksize = m_pFS->GetBlockDataSize();
 
@@ -51,7 +51,7 @@ int UnpackedFile::Read( void* buffer, int size )
             SetCacheState(cacheid, GetCacheSeq()+1);
             //need some optimization, just load the block header
             m_pFS->LoadBlockData(GetCacheid(), m_Cache);
-            offset = CalcOffsetInCurrentCache(m_Current);
+            offset = CalcOffsetInCache(m_Current, GetCacheSeq());
         }
         if(cacheid == -1)
             return 0;
@@ -86,7 +86,7 @@ int UnpackedFile::Read( void* buffer, int size )
 
             SetCacheState(cacheid, GetCacheSeq()+1);
             m_pFS->LoadBlockData(GetCacheid(), m_Cache);
-            offset = CalcOffsetInCurrentCache(m_Current);
+            offset = CalcOffsetInCache(m_Current, GetCacheSeq());
             assert(offset==0);
         }
     }
@@ -99,7 +99,7 @@ int UnpackedFile::Write( const void* buffer, int size )
     if(size <= 0)
         return 0;
 
-    int offset = CalcOffsetInCurrentCache(m_Current);
+    int offset = CalcOffsetInCache(m_Current, GetCacheSeq());
     assert(offset >= 0);
     int blocksize = m_pFS->GetBlockDataSize();
 
@@ -115,7 +115,7 @@ int UnpackedFile::Write( const void* buffer, int size )
             SetCacheState(cacheid, GetCacheSeq()+1);
             //need some optimization, just load the block header
             m_pFS->LoadBlockData(GetCacheid(), m_Cache);
-            offset = CalcOffsetInCurrentCache(m_Current);
+            offset = CalcOffsetInCache(m_Current, GetCacheSeq());
         }
     }
 
@@ -144,7 +144,7 @@ int UnpackedFile::Write( const void* buffer, int size )
             int cacheid = m_pFS->AppendOrGetNextBlockId(m_Cacheid, m_Beginid);
             SetCacheState(cacheid, GetCacheSeq()+1);
             m_pFS->LoadBlockData(GetCacheid(), m_Cache);
-            offset = CalcOffsetInCurrentCache(m_Current);
+            offset = CalcOffsetInCache(m_Current, GetCacheSeq());
             assert(offset==0);
         }
     }
@@ -224,9 +224,9 @@ void UnpackedFile::FlushHeaderToCache()
     }
 }
 
-int UnpackedFile::CalcOffsetInCurrentCache( int offset )
+int UnpackedFile::CalcOffsetInCache( int offset, int seq)
 {
-    return offset + sizeof(UnpackedFileHeader) - GetCacheSeq()*m_pFS->GetBlockDataSize();
+    return offset + sizeof(UnpackedFileHeader) - seq*m_pFS->GetBlockDataSize();
 }
 
 void UnpackedFile::FlushCache()

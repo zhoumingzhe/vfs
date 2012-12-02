@@ -34,7 +34,7 @@ public:
 private:
 
 
-    int CalcOffsetInCurrentCache(int offset);
+    int CalcOffsetInCache(int offset, int seq);
     void FlushHeaderToCache();
 
     void SetCacheState(int seq, int id);
