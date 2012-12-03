@@ -43,12 +43,6 @@
     <ClInclude Include="zlib.h" />
     <ClInclude Include="zutil.h" />
   </ItemGroup>
-  <ItemGroup>
-    <None Include="zlib.def" />
-  </ItemGroup>
-  <ItemGroup>
-    <ResourceCompile Include="zlib1.rc" />
-  </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{4968BC6A-E6B1-4FD8-9A25-A3C8820F66D6}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
