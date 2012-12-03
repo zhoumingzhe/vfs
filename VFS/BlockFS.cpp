@@ -162,6 +162,7 @@ void BlockFS::AddUnpackedFile( const char* name, char* data, int length )
         //just add refcount of the unpacked file;
         assert(!itindex->second.empty());
         int blockidx = *(itindex->second.begin());
+        e.start_id = m_entry[blockidx].start_id;
         assert(blockidx < (int)m_entry.size() && blockidx >= 0);
         UnpackedFile* pFile = CreateBlockFile(m_entry[blockidx].start_id, IFile::O_Write);
         pFile->SetRefCount(pFile->GetRefCount()+1);

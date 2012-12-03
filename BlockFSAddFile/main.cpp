@@ -4,6 +4,7 @@
 #include "../VFS/BlockManager.h"
 #include "../VFS/IFile.h"
 #include "../VFS/BlockFS.h"
+#include "../VFS/UnpackedFile.h"
 
 int main()
 {
@@ -15,6 +16,22 @@ int main()
 
     pFS->AddUnpackedFile("test123", "test123", sizeof("test123"));
     pFS->AddUnpackedFile("test1234", "test123", sizeof("test123"));
+
+    UnpackedFile* pf1 = pFS->OpenUnpackedFile("test123");
+    UnpackedFile* pf2 = pFS->OpenUnpackedFile("test1234");
+    assert(pf1->GetSize()==sizeof("test123"));
+    assert(pf2->GetSize()==sizeof("test123"));
+    char buffer[16];
+    int r = pf1->Read(buffer, sizeof(buffer));
+    assert(r == sizeof("test123"));
+    assert(strcmp(buffer, "test123")==0);
+
+    r = pf2->Read(buffer, sizeof(buffer));
+    assert(r == sizeof("test123"));
+    assert(strcmp(buffer, "test123")==0);
+
+    delete pf1;
+    delete pf2;
     delete pFS;
     delete pMgr;
     delete pFile;

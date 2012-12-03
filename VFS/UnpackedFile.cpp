@@ -32,6 +32,9 @@ int UnpackedFile::Read( void* buffer, int size )
     if(size <= 0)
         return 0;
 
+    if(size>GetSize() - m_Current)
+        size = GetSize() - m_Current;
+
     int offset = CalcOffsetInCache(m_Current, GetCacheSeq());
     assert(offset >= 0);
     int blocksize = m_pFS->GetBlockDataSize();
@@ -40,21 +43,24 @@ int UnpackedFile::Read( void* buffer, int size )
     if (offset >= blocksize)
     {
         FlushCache();
-        int cacheid = -1;
+        int cacheid = GetCacheid();
+        int cacheseq = GetCacheSeq();
         while (offset >= blocksize)
         {
             //we reach the last block,
             //nothing to read
-            cacheid = m_pFS->GetNextBlockId(m_Cacheid, m_Beginid);
+            cacheid = m_pFS->GetNextBlockId(cacheid, m_Beginid);
             if(cacheid == -1)
                 break;
-            SetCacheState(cacheid, GetCacheSeq()+1);
+            ++cacheseq;
             //need some optimization, just load the block header
-            m_pFS->LoadBlockData(GetCacheid(), m_Cache);
-            offset = CalcOffsetInCache(m_Current, GetCacheSeq());
+            offset = CalcOffsetInCache(m_Current, cacheseq);
         }
         if(cacheid == -1)
             return 0;
+        SetCacheState(cacheid, cacheseq);
+        m_pFS->LoadBlockData(GetCacheid(), m_Cache);
+
     }
     int size_left = size;
     //read in Loop
@@ -111,12 +117,11 @@ int UnpackedFile::Write( const void* buffer, int size )
         {
             //we reach the last block,
             //allocate blocks at the end
-            int cacheid = m_pFS->AppendOrGetNextBlockId(m_Cacheid, m_Beginid);
+            int cacheid = m_pFS->AppendOrGetNextBlockId(GetCacheid(), m_Beginid);
             SetCacheState(cacheid, GetCacheSeq()+1);
-            //need some optimization, just load the block header
-            m_pFS->LoadBlockData(GetCacheid(), m_Cache);
             offset = CalcOffsetInCache(m_Current, GetCacheSeq());
         }
+        m_pFS->LoadBlockData(GetCacheid(), m_Cache);
     }
 
     int size_left = size;
