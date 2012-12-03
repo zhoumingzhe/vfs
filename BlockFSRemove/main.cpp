@@ -32,6 +32,10 @@ int main()
 
     delete pf1;
     delete pf2;
+
+    pFS->RemoveFile("test123");
+    pFS->RemoveFile("test1234");
+
     delete pFS;
     delete pMgr;
     delete pFile;

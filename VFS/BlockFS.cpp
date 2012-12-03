@@ -142,7 +142,7 @@ void BlockFS::AddUnpackedFile( const char* name, char* data, int length )
     GetMD5CheckSum((unsigned char*)data, (unsigned)length, e.index.md5);
     e.index.size = length;
     e.compress_method = BlockFileEntry::compress_uncompressed;
-    strcpy_s(e.name, name);
+    strcpy(e.name, name);
 
     //if same md5 and size exist, we consider they're the same cotent;
     std::map<MD5Index, std::set<int> >::iterator itindex = m_md5Index.find(e.index);
@@ -182,8 +182,7 @@ void BlockFS::AddUnpackedFile( const char* name, char* data, int length )
         i = m_entry.size();
         m_entry.push_back(e);
     }
-    m_pFirst->Seek(i*sizeof(m_entry[0]), IFile::S_Begin);
-    m_pFirst->Write(&m_entry[i], sizeof(m_entry[i]));
+    FlushEntry(i);
 
     m_nameIndex[name] = i;
     m_md5Index[e.index].insert(i);
@@ -253,4 +252,48 @@ int BlockFS::AppendBlock( int end, int begin )
     FlushBlockHeader(begin, header);
 
     return i;
+}
+
+void BlockFS::RemoveFile( const char* name )
+{
+    assert(name[0]&&"file name is null");
+    std::map<std::string, int>::iterator it = m_nameIndex.find(name);
+    if(it == m_nameIndex.end())
+        assert(0&&"file not exist");
+    int id = it->second;
+    assert(id < m_entry.size());
+    BlockFileEntry& entry = m_entry[id];
+    assert(entry.name[0] && "name index and entry vector inconsistent");
+    assert(strcmp(entry.name, name) == 0&&"name index and entry vector inconsistent");
+    int blockid = entry.start_id;
+
+    std::map<MD5Index, std::set<int> >::iterator itmd5 = m_md5Index.find(entry.index);
+    assert(itmd5 != m_md5Index.end());
+    std::set<int>::iterator itset = itmd5->second.find(id);
+    assert(itset != itmd5->second.end());
+
+    BlockHeader header;
+    do
+    {
+        LoadBlockHeader(blockid, header);
+        assert(header.next >= 0 && "error block id");
+        assert(header.prev >= 0 && "error block id");
+        m_pMgr->RecycleBlock(header.prev);
+    }
+    while(header.prev != blockid);
+
+    memset(&entry, 0, sizeof(entry));
+    FlushEntry(id);
+    //todo: shrink file size 
+    m_nameIndex.erase(it);
+    itmd5->second.erase(itset);
+    if(itmd5->second.empty())
+        m_md5Index.erase(itmd5);
+
+}
+
+void BlockFS::FlushEntry( int entry )
+{
+    m_pFirst->Seek(entry*sizeof(m_entry[0]), IFile::S_Begin);
+    m_pFirst->Write(&m_entry[entry], sizeof(m_entry[entry]));
 }

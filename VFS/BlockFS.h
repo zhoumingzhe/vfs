@@ -53,6 +53,7 @@ public:
     UnpackedFile* CreateBlockFile(int blockid, IFile::OpenMode mode);
 
     void AddUnpackedFile(const char* name, char* data, int length);
+    void RemoveFile(const char* name);
 
     UnpackedFile* OpenUnpackedFile(const char* name);
     void OnFileDestory(IFile* pFile);
@@ -77,6 +78,8 @@ public:
 private:
 
     int FindFirstUnusedEntry();
+    void FlushEntry(int entry);
+
     BlockManager *m_pMgr;
     std::set<IFile*> m_opened;
     IFile* m_pFirst;
