@@ -261,7 +261,7 @@ void BlockFS::RemoveFile( const char* name )
     if(it == m_nameIndex.end())
         assert(0&&"file not exist");
     int id = it->second;
-    assert(id < m_entry.size());
+    assert(id < (int)m_entry.size());
     BlockFileEntry& entry = m_entry[id];
     assert(entry.name[0] && "name index and entry vector inconsistent");
     assert(strcmp(entry.name, name) == 0&&"name index and entry vector inconsistent");
@@ -296,4 +296,15 @@ void BlockFS::FlushEntry( int entry )
 {
     m_pFirst->Seek(entry*sizeof(m_entry[0]), IFile::S_Begin);
     m_pFirst->Write(&m_entry[entry], sizeof(m_entry[entry]));
+}
+
+void BlockFS::ExportFileNames( std::vector<std::string>& names )
+{
+    names.clear();
+    names.reserve(m_nameIndex.size());
+    for(std::map<std::string, int>::iterator it = m_nameIndex.begin();
+        it != m_nameIndex.end(); ++it)
+    {
+        names.push_back(it->first);
+    }
 }

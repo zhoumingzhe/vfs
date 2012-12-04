@@ -73,6 +73,7 @@ public:
     int AppendOrGetNextBlockId(int blockid, int beginid);
 
     int AppendBlock(int end, int begin);
+    void ExportFileNames(std::vector<std::string>& names);
     //test only;
     IFile* First() const { return m_pFirst; }
 private:

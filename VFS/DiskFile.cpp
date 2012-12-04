@@ -55,7 +55,7 @@ int DiskFile::Write( const void* buffer, int size )
     DWORD ret;
     BOOL result = WriteFile(m_hFile, buffer, size, &ret, NULL);
     assert(result);
-    FlushFileBuffers(m_hFile);
+    //FlushFileBuffers(m_hFile);
     return ret;
 }
 
