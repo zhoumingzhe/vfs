@@ -1,6 +1,7 @@
 #include "stdafx.h"
+#include <algorithm>
+#include <assert.h>
 #include "VFS.h"
-
 #include "IFile.h"
 #include "UnpackedFile.h"
 #include "BlockManager.h"
@@ -35,12 +36,40 @@ void VFS::SetPackage( const char* name )
     GetVfsData().pFS = new BlockFS(GetVfsData().pMgr, IFile::O_ReadOnly);
 }
 
+static std::string GetPathInPackage(std::string path)
+{
+    std::string result = path;
+    std::transform(result.begin(), result.end(), result.begin(), tolower);
+
+    for(std::string::iterator it = result.begin();
+        it != result.end(); ++it)
+    {
+        if(*it == '\\')
+            *it = '/';
+    }
+
+    int index = result.find("../");
+    if(index != std::string::npos)
+    {
+        assert(index == 0);
+        result.replace(index,3,"");
+    }
+    for(index = result.find("//"); index != std::string::npos; index = result.find("//"))
+    {
+        result.replace(index, 2, "/");
+    }
+
+    return result;
+}
+
 IFile* VFS::Open( const char* name )
 {
+    std::string name_inpackage  = GetPathInPackage(name);
+
     BlockFS *pFs = GetVfsData().pFS;
     if(pFs)
     {
-        return pFs->OpenUnpackedFile(name);
+        return pFs->OpenUnpackedFile(name_inpackage.c_str());
     }
     else
     {
