@@ -37,7 +37,6 @@ int main()
         }
         while (FindNextFileA(hfine, &finddata));
     }
-    FindNextFileA(hfine, &finddata);
     FindClose(hfine);
     delete pFS;
     delete pMgr;
