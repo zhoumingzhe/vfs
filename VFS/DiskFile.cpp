@@ -1,10 +1,15 @@
+#include "stdafx.h"
 #include <Windows.h>
+#include <Shlwapi.h>
 #include <assert.h>
 #include "DiskFile.h"
 
 IFile* OpenDiskFile(const char* name, IFile::OpenMode mode)
 {
-    return new DiskFile(name, mode);
+    if(PathFileExistsA(name))
+        return new DiskFile(name, mode);
+    else
+        return 0;
 }
 DiskFile::DiskFile(const char* name, OpenMode mode):m_eMode(mode)
 {

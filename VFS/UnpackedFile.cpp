@@ -1,3 +1,4 @@
+#include "stdafx.h"
 #include <assert.h>
 #include "UnpackedFile.h"
 #include "BlockFS.h"
