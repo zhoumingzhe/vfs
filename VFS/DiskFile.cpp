@@ -6,10 +6,10 @@
 
 IFile* OpenDiskFile(const char* name, IFile::OpenMode mode)
 {
-    if(PathFileExistsA(name))
-        return new DiskFile(name, mode);
-    else
+    if(!PathFileExistsA(name) && mode != IFile::O_Truncate)
         return 0;
+    else
+        return new DiskFile(name, mode);
 }
 DiskFile::DiskFile(const char* name, OpenMode mode):m_eMode(mode)
 {

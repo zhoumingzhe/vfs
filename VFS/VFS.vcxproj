@@ -14,6 +14,7 @@
     <ClCompile Include="BlockFS.cpp" />
     <ClCompile Include="BlockManager.cpp" />
     <ClCompile Include="DiskFile.cpp" />
+    <ClCompile Include="FileLock.cpp" />
     <ClCompile Include="GUtMd5.cpp" />
     <ClCompile Include="IFile.cpp" />
     <ClCompile Include="PackedFile.cpp" />
@@ -24,6 +25,7 @@
     <ClInclude Include="BlockFS.h" />
     <ClInclude Include="BlockManager.h" />
     <ClInclude Include="DiskFile.h" />
+    <ClInclude Include="FileLock.h" />
     <ClInclude Include="GUtMd5.h" />
     <ClInclude Include="GUtMd5Config.h" />
     <ClInclude Include="IFile.h" />

@@ -42,6 +42,9 @@
     <ClCompile Include="VFS.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="FileLock.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="DiskFile.h">
@@ -69,6 +72,9 @@
       <Filter>Utils</Filter>
     </ClInclude>
     <ClInclude Include="VFS.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="FileLock.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

@@ -2,9 +2,10 @@
 #include <assert.h>
 #include "BlockManager.h"
 #include "IFile.h"
+#include "FileLock.h"
 
 BlockManager::BlockManager(IFile* pFile, bool truncate, int blocksize)
-    :m_pFile(pFile), m_Header(blocksize, -1, 0)
+    :m_pFile(pFile), m_Header(blocksize, -1, 0), m_pLock(new FileLock)
 {
     if(truncate)
     {
@@ -18,6 +19,7 @@ BlockManager::BlockManager(IFile* pFile, bool truncate, int blocksize)
 
 BlockManager::~BlockManager(void)
 {
+    delete m_pLock;
 }
 
 void BlockManager::CreateNew(int blocksize)
@@ -71,6 +73,7 @@ int BlockManager::CalcOffset( int blockid )
 
 int BlockManager::AllocBlock()
 {
+    FileAutoLock lock(m_pLock);
     if(m_Header.Unused < 0)
         return AllocNewBlock();
     else
@@ -79,6 +82,7 @@ int BlockManager::AllocBlock()
 
 void BlockManager::RecycleBlock( int blockid )
 {
+    FileAutoLock lock(m_pLock);
     assert(blockid >=0 && blockid < m_Header.Blocks && "Recycle out of range");
     assert(blockid != m_Header.Unused && "Recycle again?");
     if(blockid == m_Header.Blocks -1)//shrink file size
@@ -124,6 +128,7 @@ void BlockManager::RecycleBlock( int blockid )
 
 void BlockManager::ReadEmptyBlockHeader( int blockid, int &header )
 {
+    //FileAutoLock lock(m_pLock);
     assert(blockid < m_Header.Blocks && "out of range");
     m_pFile->Seek(CalcOffset(blockid), IFile::S_Begin);
     m_pFile->Read(&header, sizeof(header));
@@ -167,24 +172,9 @@ void BlockManager::ZeroBlock( int blockid )
     m_pFile->Write(&buffer[0], m_Header.BlockSize);
 }
 
-void BlockManager::ReadBlockData( int blockid, std::vector<char>& data )
-{
-    data.resize(m_Header.BlockSize);
-    m_pFile->Seek(CalcOffset(blockid), IFile::S_Begin);
-    int ret = m_pFile->Read(&data[0], m_Header.BlockSize);
-    assert(ret == m_Header.BlockSize);
-}
-
-void BlockManager::WriteBlockData( int blockid, std::vector<char>& data )
-{
-    assert(data.size() == m_Header.BlockSize);
-    m_pFile->Seek(CalcOffset(blockid), IFile::S_Begin);
-    int ret = m_pFile->Write(&data[0], m_Header.BlockSize);
-    assert(ret == m_Header.BlockSize);
-}
-
 void BlockManager::ReadPartialBlockData( int blockid, void* buffer, int offset, int length )
 {
+    FileAutoLock lock(m_pLock);
     m_pFile->Seek(CalcOffset(blockid) + offset, IFile::S_Begin);
     int result = m_pFile->Read(buffer, length);
     assert(result == length);
@@ -192,6 +182,7 @@ void BlockManager::ReadPartialBlockData( int blockid, void* buffer, int offset, 
 
 void BlockManager::WritePartialBlockData( int blockid, const void* buffer, int offset, int length )
 {
+    FileAutoLock lock(m_pLock);
     m_pFile->Seek(CalcOffset(blockid) + offset, IFile::S_Begin);
     int result = m_pFile->Write(buffer, length);
     assert(result == length);

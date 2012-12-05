@@ -1,7 +1,8 @@
 #pragma once
-class IFile;
 #include <vector>
 
+class IFile;
+class FileLock;
 class BlockManager
 {
     struct FileHeader
@@ -26,23 +27,20 @@ public:
     int GetBlocks();
     int GetUnused();
 
-    void CheckHeader();
-    void FlushHeader();
 
     int AllocBlock();
     void RecycleBlock(int blockid);
 
-    void ReadEmptyBlockHeader(int blockid, int &header);
-    void WriteEmptyBlockHeader(int blockid, int header);
-
-    void ZeroBlock(int blockid);
-
-    void ReadBlockData(int blockid, std::vector<char>& data);
-    void WriteBlockData(int blockid, std::vector<char>& data);
-
     void ReadPartialBlockData(int blockid, void* buffer, int offset, int length);
     void WritePartialBlockData(int blockid, const void* buffer, int offset, int length);
 private:
+
+    void CheckHeader();
+    void FlushHeader();
+    void ZeroBlock(int blockid);
+    void ReadEmptyBlockHeader(int blockid, int &header);
+    void WriteEmptyBlockHeader(int blockid, int header);
+
     void CreateNew(int blocksize);
     void LoadExist(int blocksize);
 
@@ -52,5 +50,6 @@ private:
     int CalcOffset(int blockid);
     IFile* m_pFile;
     FileHeader m_Header;
+    FileLock* m_pLock;
 };
 
