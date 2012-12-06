@@ -52,7 +52,8 @@ public:
 
     UnpackedFile* CreateBlockFile(int blockid, IFile::OpenMode mode);
 
-    void AddUnpackedFile(const char* name, char* data, int length);
+    void AddFile(const char* name, char* data, int length,
+        int compression = BlockFileEntry::compress_uncompressed);
     void RemoveFile(const char* name);
 
     UnpackedFile* OpenUnpackedFile(const char* name);

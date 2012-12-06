@@ -14,8 +14,8 @@ int main()
     BlockManager* pMgr = new BlockManager(pFile, mode==IFile::O_Truncate, 1024);
     BlockFS *pFS = new BlockFS(pMgr, mode);
 
-    pFS->AddUnpackedFile("test123", "test123", sizeof("test123"));
-    pFS->AddUnpackedFile("test1234", "test1234", sizeof("test1234"));
+    pFS->AddFile("test123", "test123", sizeof("test123"));
+    pFS->AddFile("test1234", "test1234", sizeof("test1234"));
 
     UnpackedFile* pf1 = pFS->OpenUnpackedFile("test123");
     UnpackedFile* pf2 = pFS->OpenUnpackedFile("test1234");

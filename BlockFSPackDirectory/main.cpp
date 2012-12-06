@@ -31,7 +31,7 @@ int main()
             int length = pTemp->GetSize();
             char* buff = new char[length];
             pTemp->Read(buff, length);
-            pFS->AddUnpackedFile(name.c_str(), buff, length);
+            pFS->AddFile(name.c_str(), buff, length, 1);
             delete[]buff;
             delete pTemp;
         }

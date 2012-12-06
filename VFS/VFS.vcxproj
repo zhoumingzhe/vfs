@@ -33,6 +33,11 @@
     <ClInclude Include="UnpackedFile.h" />
     <ClInclude Include="VFS.h" />
   </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\zlib\zlib.vcxproj">
+      <Project>{4968bc6a-e6b1-4fd8-9a25-a3c8820f66d6}</Project>
+    </ProjectReference>
+  </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{92803B03-6347-45C4-9633-21172FAB6074}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>

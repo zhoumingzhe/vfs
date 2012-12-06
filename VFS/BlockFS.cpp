@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "../zlib/zlib.h"
 #include <assert.h>
 #include "BlockFS.h"
 #include "BlockManager.h"
@@ -132,7 +133,45 @@ int BlockFS::AllocBlock(const BlockHeader& header)
     return i;
 }
 
-void BlockFS::AddUnpackedFile( const char* name, char* data, int length )
+static int CompressData(IFile *pOut, void* data, int length)
+{
+    const int chunk = 16*1024;
+    int ret;
+    unsigned have;
+    z_stream strm;
+    std::vector<unsigned char> out;
+
+    out.resize(chunk);
+
+    /* allocate deflate state */
+    strm.zalloc = Z_NULL;
+    strm.zfree = Z_NULL;
+    strm.opaque = Z_NULL;
+    ret = deflateInit(&strm, Z_BEST_SPEED);
+    if (ret != Z_OK)
+        return ret;
+
+    strm.avail_in = length;
+    strm.next_in = (unsigned char*)data;
+
+    do {
+        strm.avail_out = chunk;
+        strm.next_out = &out[0];
+        ret = deflate(&strm, Z_FINISH);    /* no bad return value */
+        assert(ret != Z_STREAM_ERROR);  /* state not clobbered */
+        have = chunk - strm.avail_out;
+        pOut->Write(&out[0], have);
+    } while (strm.avail_out == 0);
+    assert(strm.avail_in == 0);     /* all input will be used */
+
+    assert(ret == Z_STREAM_END);        /* stream will be complete */
+
+    /* clean up and return */
+    deflateEnd(&strm);
+    return Z_OK;
+}
+
+void BlockFS::AddFile( const char* name, char* data, int length, int compression )
 {
     size_t name_length = strlen(name);
     assert(name_length > 0);
@@ -142,7 +181,7 @@ void BlockFS::AddUnpackedFile( const char* name, char* data, int length )
     BlockFileEntry e;
     GetMD5CheckSum((unsigned char*)data, (unsigned)length, e.index.md5);
     e.index.size = length;
-    e.compress_method = BlockFileEntry::compress_uncompressed;
+    e.compress_method = compression;
     strcpy(e.name, name);
 
     //if same md5 and size exist, we consider they're the same cotent;
@@ -153,7 +192,18 @@ void BlockFS::AddUnpackedFile( const char* name, char* data, int length )
         BlockHeader header = {e.start_id, e.start_id};
         FlushBlockHeader(e.start_id, header);
         UnpackedFile* pFile = CreateBlockFile(e.start_id, IFile::O_Truncate);
-        pFile->Write(data, length);
+        switch (compression)
+        {
+        case BlockFileEntry::compress_uncompressed:
+            pFile->Write(data, length);
+            break;
+        case BlockFileEntry::compress_zlib:
+            CompressData(pFile, data, length);
+            break;
+        default:
+            assert(0);
+            break;
+        }
         pFile->SetRefCount(1);
         pFile->FlushHeaderToDisk();
         delete pFile;

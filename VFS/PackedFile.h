@@ -1,10 +1,21 @@
 #pragma once
 #include "IFile.h"
-
-class PackedFile :
-    public IFile
+#include "../zlib/zlib.h"
+class UnpackedFile;
+class PackedFile: public IFile
 {
 public:
-    PackedFile(void);
+    PackedFile(UnpackedFile* pFile, int size);
     virtual ~PackedFile(void);
+
+
+    virtual int Read(void* buffer, int size);
+    virtual int Write(const void* buffer, int size);
+    virtual int Seek(int pos, enum SeekMode mode);
+    virtual int GetSize();
+    virtual int ReserveSpace(int size);
+private:
+    int m_Size;
+    UnpackedFile* m_pFile;
+    z_stream m_Stream;
 };
