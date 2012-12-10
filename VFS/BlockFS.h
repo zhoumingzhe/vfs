@@ -56,7 +56,7 @@ public:
         int compression = BlockFileEntry::compress_uncompressed);
     void RemoveFile(const char* name);
 
-    UnpackedFile* OpenUnpackedFile(const char* name);
+    IFile* OpenFileInPackage(const char* name);
     void OnFileDestory(IFile* pFile);
     bool LoadCache(int id, BlockCache& cache);
     bool FlushCache(int id, BlockCache& cache);

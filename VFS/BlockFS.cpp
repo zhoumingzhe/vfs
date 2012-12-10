@@ -135,7 +135,9 @@ int BlockFS::AllocBlock(const BlockHeader& header)
 
 static int CompressData(IFile *pOut, void* data, int length)
 {
-    const int chunk = 16*1024;
+    if(length <= 0)
+        return Z_OK;
+    const int chunk = 1024*1024;
     int ret;
     unsigned have;
     z_stream strm;
@@ -251,7 +253,7 @@ int BlockFS::FindFirstUnusedEntry()
     return -1;
 }
 
-UnpackedFile* BlockFS::OpenUnpackedFile( const char* name )
+IFile* BlockFS::OpenFileInPackage( const char* name )
 {
     std::map<std::string, int>::iterator it = m_nameIndex.find(name);
     if(it == m_nameIndex.end())
@@ -259,7 +261,23 @@ UnpackedFile* BlockFS::OpenUnpackedFile( const char* name )
     assert(it->second < (int)m_entry.size());
     const BlockFileEntry& e = m_entry[it->second];
     assert(strcmp(e.name, name)==0);
-    return CreateBlockFile(e.start_id, IFile::O_ReadOnly);
+    switch (e.compress_method)
+    {
+    case BlockFileEntry::compress_uncompressed:
+        return CreateBlockFile(e.start_id, IFile::O_ReadOnly);
+        break;
+    case BlockFileEntry::compress_zlib:
+        {
+            UnpackedFile* pFile = CreateBlockFile(e.start_id, IFile::O_ReadOnly);
+            PackedFile* pUnpacked = new PackedFile(pFile, e.index.size);
+            return pUnpacked;
+            break;
+        }
+    default:
+        return 0;
+        break;
+    }
+
 }
 
 int BlockFS::GetNextBlockId( int blockid, int beginid )

@@ -69,7 +69,7 @@ IFile* VFS::Open( const char* name )
     BlockFS *pFs = GetVfsData().pFS;
     if(pFs)
     {
-        return pFs->OpenUnpackedFile(name_inpackage.c_str());
+        return pFs->OpenFileInPackage(name_inpackage.c_str());
     }
     else
     {

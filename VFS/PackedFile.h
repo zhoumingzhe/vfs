@@ -1,6 +1,7 @@
 #pragma once
 #include "IFile.h"
 #include "../zlib/zlib.h"
+#include <vector>
 class UnpackedFile;
 class PackedFile: public IFile
 {
@@ -18,4 +19,6 @@ private:
     int m_Size;
     UnpackedFile* m_pFile;
     z_stream m_Stream;
+
+    std::vector<unsigned char> m_Buffer;
 };

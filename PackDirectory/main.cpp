@@ -31,7 +31,8 @@ void AddFileRecursively(const std::string dir, BlockFS* pFS)
             char* buff = new char[length];
             pTemp->Read(buff, length);
             std::transform(name.begin(), name.end(), name.begin(), tolower);
-            pFS->AddFile(name.c_str(), buff, length);
+            printf("adding %s, %d bytes\n", name.c_str(), length);
+            pFS->AddFile(name.c_str(), buff, length, 1);
             delete[]buff;
             delete pTemp;
         }

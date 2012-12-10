@@ -19,7 +19,7 @@ int main()
     for (std::vector<std::string>::iterator it = names.begin();
         it != names.end(); ++it)
     {
-        UnpackedFile* pUnpackedFile = pFS->OpenUnpackedFile(it->c_str());
+        IFile* pUnpackedFile = pFS->OpenFileInPackage(it->c_str());
         IFile* pTemp = OpenDiskFile(it->c_str(), IFile::O_Truncate);
         int length = pUnpackedFile->GetSize();
         char* buff = new char[length];

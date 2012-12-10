@@ -17,8 +17,8 @@ int main()
     pFS->AddFile("test123", "test123", sizeof("test123"));
     pFS->AddFile("test1234", "test1234", sizeof("test1234"));
 
-    UnpackedFile* pf1 = pFS->OpenUnpackedFile("test123");
-    UnpackedFile* pf2 = pFS->OpenUnpackedFile("test1234");
+    IFile* pf1 = pFS->OpenFileInPackage("test123");
+    IFile* pf2 = pFS->OpenFileInPackage("test1234");
     assert(pf1->GetSize()==sizeof("test123"));
     assert(pf2->GetSize()==sizeof("test1234"));
     char buffer[16];
