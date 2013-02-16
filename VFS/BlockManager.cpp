@@ -4,8 +4,8 @@
 #include "IFile.h"
 #include "FileLock.h"
 
-BlockManager::BlockManager(IFile* pFile, bool truncate, int blocksize)
-    :m_pFile(pFile), m_Header(blocksize, -1, 0), m_pLock(new FileLock)
+BlockManager::BlockManager(IFile* pFile, bool truncate, offset_type blocksize)
+    :m_pFile(pFile), m_Header(blocksize, offset_type(-1), offset_type(0)), m_pLock(new FileLock)
 {
     if(truncate)
     {
@@ -22,32 +22,36 @@ BlockManager::~BlockManager(void)
     delete m_pLock;
 }
 
-void BlockManager::CreateNew(int blocksize)
+void BlockManager::CreateNew(offset_type blocksize)
 {
-    m_pFile->Seek(0, IFile::S_Begin);
-    m_pFile->Write(&m_Header, sizeof(m_Header));
-    m_pFile->ReserveSpace(sizeof(m_Header));
+    m_pFile->Seek(offset_type(0), IFile::S_Begin);
+
+    m_pFile->Write(&m_Header, offset_type(sizeof(m_Header)));
+    m_pFile->ReserveSpace(offset_type(sizeof(m_Header)));
 }
 
-void BlockManager::LoadExist(int blocksize)
+void BlockManager::LoadExist(offset_type blocksize)
 {
-    m_pFile->Seek(0, IFile::S_Begin);
-    m_pFile->Read(&m_Header, sizeof(m_Header));
+    m_pFile->Seek(offset_type(0), IFile::S_Begin);
+
+    offset_type sizetoread;
+    sizetoread.offset = sizeof(m_Header);
+    m_pFile->Read(&m_Header, sizetoread);
     assert(m_Header.BlockSize == blocksize && "Block Size Error");
     CheckHeader();
 }
 
-int BlockManager::GetBlockSize()
+offset_type BlockManager::GetBlockSize()
 {
     return m_Header.BlockSize;
 }
 
-int BlockManager::GetBlocks()
+offset_type BlockManager::GetBlocks()
 {
     return m_Header.Blocks;
 }
 
-int BlockManager::GetUnused()
+offset_type BlockManager::GetUnused()
 {
     return m_Header.Unused;
 }
@@ -55,46 +59,47 @@ int BlockManager::GetUnused()
 void BlockManager::CheckHeader()
 {
     assert(m_Header.Unused<m_Header.Blocks && "Unused Should be Less than Blocks");
-    assert(m_pFile->GetSize() == m_Header.BlockSize*m_Header.Blocks + sizeof(m_Header)
+    assert(m_pFile->GetSize().offset == m_Header.BlockSize.offset*m_Header.Blocks.offset + sizeof(m_Header)
         && "Wrong Header");
 }
 
 void BlockManager::FlushHeader()
 {
     CheckHeader();
-    m_pFile->Seek(0, IFile::S_Begin);
-    m_pFile->Write(&m_Header, sizeof(m_Header));
+    m_pFile->Seek(offset_type(0), IFile::S_Begin);
+
+    m_pFile->Write(&m_Header, offset_type(sizeof(m_Header)));
 }
 
-int BlockManager::CalcOffset( int blockid )
+offset_type BlockManager::CalcOffset( offset_type blockid )
 {
-    return sizeof(m_Header)+m_Header.BlockSize*blockid;
+    return offset_type(sizeof(m_Header)+m_Header.BlockSize.offset*blockid.offset);
 }
 
-int BlockManager::AllocBlock()
+offset_type BlockManager::AllocBlock()
 {
     FileAutoLock lock(m_pLock);
-    if(m_Header.Unused < 0)
+    if(m_Header.Unused.offset < 0)
         return AllocNewBlock();
     else
         return AllocExistBlock();
 }
 
-void BlockManager::RecycleBlock( int blockid )
+void BlockManager::RecycleBlock( offset_type blockid )
 {
     FileAutoLock lock(m_pLock);
-    assert(blockid >=0 && blockid < m_Header.Blocks && "Recycle out of range");
+    assert(blockid.offset >=0 && blockid < m_Header.Blocks && "Recycle out of range");
     assert(blockid != m_Header.Unused && "Recycle again?");
-    if(blockid == m_Header.Blocks -1)//shrink file size
+    if(blockid.offset == m_Header.Blocks.offset -1)//shrink file size
     {
-        --m_Header.Blocks;
-        while (m_Header.Unused == m_Header.Blocks -1 && m_Header.Unused >= 0)
+        --m_Header.Blocks.offset;
+        while (m_Header.Unused.offset == m_Header.Blocks.offset -1 && m_Header.Unused.offset >= 0)
         {
-            int header = -1;
+            offset_type header(-1);
             ReadEmptyBlockHeader(m_Header.Unused, header);
             m_Header.Unused = header;
-            --m_Header.Blocks;
-            assert(m_Header.Blocks >=0);
+            --m_Header.Blocks.offset;
+            assert(m_Header.Blocks.offset >=0);
             assert(m_Header.Unused < m_Header.Blocks);
         }
         m_pFile->ReserveSpace(CalcOffset(m_Header.Blocks));
@@ -104,16 +109,16 @@ void BlockManager::RecycleBlock( int blockid )
     {
         if(blockid > m_Header.Unused)
         {
-            int header = m_Header.Unused;
+            offset_type header = m_Header.Unused;
             WriteEmptyBlockHeader(blockid, header);
             m_Header.Unused = blockid;
             FlushHeader();
         }
         else
         {
-            int unused = m_Header.Unused;
-            int found = 0;
-            int header = -1;
+            offset_type unused = m_Header.Unused;
+            offset_type found(0);
+            offset_type header(-1);
             while (blockid < unused)
             {
                 ReadEmptyBlockHeader(unused, header);
@@ -126,37 +131,38 @@ void BlockManager::RecycleBlock( int blockid )
     }
 }
 
-void BlockManager::ReadEmptyBlockHeader( int blockid, int &header )
+void BlockManager::ReadEmptyBlockHeader( offset_type blockid, offset_type &header )
 {
     //FileAutoLock lock(m_pLock);
     assert(blockid < m_Header.Blocks && "out of range");
     m_pFile->Seek(CalcOffset(blockid), IFile::S_Begin);
-    m_pFile->Read(&header, sizeof(header));
+    m_pFile->Read(&header, offset_type(sizeof(header)));
 }
 
-void BlockManager::WriteEmptyBlockHeader( int blockid, int header )
+void BlockManager::WriteEmptyBlockHeader( offset_type blockid, offset_type header )
 {
     assert(blockid < m_Header.Blocks && "out of range");
     m_pFile->Seek(CalcOffset(blockid), IFile::S_Begin);
-    m_pFile->Write(&header, sizeof(header));
+    m_pFile->Write(&header, offset_type(sizeof(header)));
 }
 
-int BlockManager::AllocNewBlock()
+offset_type BlockManager::AllocNewBlock()
 {
     CheckHeader();
-    assert(m_Header.Unused < 0);
-    int blockid = m_Header.Blocks++;
+    assert(m_Header.Unused.offset < 0);
+    offset_type blockid = m_Header.Blocks;
+    ++m_Header.Blocks.offset;
     m_pFile->ReserveSpace(CalcOffset(m_Header.Blocks));
     FlushHeader();
     return blockid;
 }
 
-int BlockManager::AllocExistBlock()
+offset_type BlockManager::AllocExistBlock()
 {
     CheckHeader();
-    assert(m_Header.Unused >= 0);
-    int result = m_Header.Unused;
-    int header;
+    assert(m_Header.Unused.offset >= 0);
+    offset_type result = m_Header.Unused;
+    offset_type header;
     ReadEmptyBlockHeader(result, header);
     m_Header.Unused = header;
     header = result;
@@ -165,26 +171,26 @@ int BlockManager::AllocExistBlock()
     return result;
 }
 
-void BlockManager::ZeroBlock( int blockid )
+void BlockManager::ZeroBlock( offset_type blockid )
 {
     m_pFile->Seek(CalcOffset(blockid), IFile::S_Begin);
-    std::vector<char>buffer(m_Header.BlockSize);//performance penalties
+    std::vector<char>buffer((size_t)m_Header.BlockSize.offset);//performance penalties
     m_pFile->Write(&buffer[0], m_Header.BlockSize);
 }
 
-void BlockManager::ReadPartialBlockData( int blockid, void* buffer, int offset, int length )
+void BlockManager::ReadPartialBlockData( offset_type blockid, void* buffer, offset_type offset, offset_type length )
 {
     FileAutoLock lock(m_pLock);
     m_pFile->Seek(CalcOffset(blockid) + offset, IFile::S_Begin);
-    int result = m_pFile->Read(buffer, length);
+    offset_type result = m_pFile->Read(buffer, length);
     assert(result == length);
 }
 
-void BlockManager::WritePartialBlockData( int blockid, const void* buffer, int offset, int length )
+void BlockManager::WritePartialBlockData( offset_type blockid, const void* buffer, offset_type offset, offset_type length )
 {
     FileAutoLock lock(m_pLock);
     m_pFile->Seek(CalcOffset(blockid) + offset, IFile::S_Begin);
-    int result = m_pFile->Write(buffer, length);
+    offset_type result = m_pFile->Write(buffer, length);
     assert(result == length);
 }
 

@@ -11,7 +11,7 @@ int main()
     _CrtSetDbgFlag ( _CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF );
     IFile::OpenMode mode = IFile::O_ReadOnly;
     IFile *pFile = OpenDiskFile("test.pkg", mode);
-    BlockManager* pMgr = new BlockManager(pFile, mode==IFile::O_Truncate, 1024);
+    BlockManager* pMgr = new BlockManager(pFile, mode==IFile::O_Truncate, offset_type(1024));
     BlockFS *pFS = new BlockFS(pMgr, mode);
 
     std::vector<std::string> names;
@@ -21,8 +21,8 @@ int main()
     {
         IFile* pUnpackedFile = pFS->OpenFileInPackage(it->c_str());
         IFile* pTemp = OpenDiskFile(it->c_str(), IFile::O_Truncate);
-        int length = pUnpackedFile->GetSize();
-        char* buff = new char[length];
+        offset_type length = pUnpackedFile->GetSize();
+        char* buff = new char[(size_t)length.offset];
         pUnpackedFile->Read(buff, length);
         pTemp->Write(buff, length);
 

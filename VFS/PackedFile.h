@@ -6,17 +6,17 @@ class UnpackedFile;
 class PackedFile: public IFile
 {
 public:
-    PackedFile(UnpackedFile* pFile, int size);
+    PackedFile(UnpackedFile* pFile, offset_type size);
     virtual ~PackedFile(void);
 
 
-    virtual int Read(void* buffer, int size);
-    virtual int Write(const void* buffer, int size);
-    virtual int Seek(int pos, enum SeekMode mode);
-    virtual int GetSize();
-    virtual int ReserveSpace(int size);
+    virtual offset_type Read(void* buffer, offset_type size);
+    virtual offset_type Write(const void* buffer, offset_type size);
+    virtual offset_type Seek(offset_type pos, enum SeekMode mode);
+    virtual offset_type GetSize();
+    virtual void ReserveSpace(offset_type size);
 private:
-    int m_Size;
+    offset_type m_Size;
     UnpackedFile* m_pFile;
     z_stream m_Stream;
 

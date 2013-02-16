@@ -13,14 +13,14 @@ class UnpackedFile :
     public IFile
 {
 public:
-    UnpackedFile(BlockFS* pFS, OpenMode mode, int beginid);
+    UnpackedFile(BlockFS* pFS, OpenMode mode, offset_type beginid);
     ~UnpackedFile(void);
 
-    virtual int Read(void* buffer, int size);
-    virtual int Write(const void* buffer, int size);
-    virtual int Seek(int pos, enum SeekMode mode);
-    virtual int GetSize();
-    virtual int ReserveSpace(int size);
+    virtual offset_type Read(void* buffer, offset_type size);
+    virtual offset_type Write(const void* buffer, offset_type size);
+    virtual offset_type Seek(offset_type pos, enum SeekMode mode);
+    virtual offset_type GetSize();
+    virtual void ReserveSpace(offset_type size);
 
     int GetRefCount();
     void SetRefCount(int refcount);
@@ -34,25 +34,25 @@ public:
 private:
 
 
-    int CalcOffsetInCache(int offset, int seq);
+    offset_type CalcOffsetInCache(offset_type offset, offset_type seq);
     void FlushHeaderToCache();
 
-    void SetCacheState(int seq, int id);
-    int GetCacheid(){return m_Cacheid;}
-    int GetCacheSeq(){return m_CacheSeq;}
+    void SetCacheState(offset_type seq, offset_type id);
+    offset_type GetCacheid(){return m_Cacheid;}
+    offset_type GetCacheSeq(){return m_CacheSeq;}
 
 
     BlockFS* m_pFS;
 
-    const int m_Beginid; //begin block id
+    const offset_type m_Beginid; //begin block id
 
     UnpackedFileHeader m_Header; //Header in the first block
 
-    int m_Current; //current offset in the file
+    offset_type m_Current; //current offset in the file
 
     bool m_CacheChanged; //if this is true, cache have to be write back
-    int m_CacheSeq; //the sequence of the current cache
-    int m_Cacheid;      //cached block id
+    offset_type m_CacheSeq; //the sequence of the current cache
+    offset_type m_Cacheid;      //cached block id
     std::vector<char> m_Cache; //cached block
 };
 

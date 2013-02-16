@@ -1,53 +1,53 @@
 #pragma once
 #include <vector>
-
-class IFile;
+#include "IFile.h"
 class FileLock;
 class BlockManager
 {
     struct FileHeader
     {
-        int BlockSize;  //sizeof one block
-        int Unused;     //the last unused blockid
-        int Blocks;
-        int Reserved;
-        FileHeader(int blocksize, int unused, int blocks):
+        offset_type BlockSize;  //sizeof one block
+        offset_type Unused;     //the last unused blockid
+        offset_type Blocks;
+        offset_type Reserved;
+        FileHeader(offset_type blocksize, offset_type unused, offset_type blocks):
             BlockSize(blocksize),
             Unused(unused),
-            Blocks(blocks),
-            Reserved(0)
-        {}
+            Blocks(blocks)
+        {
+            Reserved.offset = 0;
+        }
     };
 
 public:
-    BlockManager(IFile* pFile, bool truncate, int blocksize);
+    BlockManager(IFile* pFile, bool truncate, offset_type blocksize);
     ~BlockManager(void);
 
-    int GetBlockSize();
-    int GetBlocks();
-    int GetUnused();
+    offset_type GetBlockSize();
+    offset_type GetBlocks();
+    offset_type GetUnused();
 
 
-    int AllocBlock();
-    void RecycleBlock(int blockid);
+    offset_type AllocBlock();
+    void RecycleBlock(offset_type blockid);
 
-    void ReadPartialBlockData(int blockid, void* buffer, int offset, int length);
-    void WritePartialBlockData(int blockid, const void* buffer, int offset, int length);
+    void ReadPartialBlockData(offset_type blockid, void* buffer, offset_type offset, offset_type length);
+    void WritePartialBlockData(offset_type blockid, const void* buffer, offset_type offset, offset_type length);
 private:
 
     void CheckHeader();
     void FlushHeader();
-    void ZeroBlock(int blockid);
-    void ReadEmptyBlockHeader(int blockid, int &header);
-    void WriteEmptyBlockHeader(int blockid, int header);
+    void ZeroBlock(offset_type blockid);
+    void ReadEmptyBlockHeader(offset_type blockid, offset_type &header);
+    void WriteEmptyBlockHeader(offset_type blockid, offset_type header);
 
-    void CreateNew(int blocksize);
-    void LoadExist(int blocksize);
+    void CreateNew(offset_type blocksize);
+    void LoadExist(offset_type blocksize);
 
-    int AllocNewBlock();
-    int AllocExistBlock();
+    offset_type AllocNewBlock();
+    offset_type AllocExistBlock();
 
-    int CalcOffset(int blockid);
+    offset_type CalcOffset(offset_type blockid);
     IFile* m_pFile;
     FileHeader m_Header;
     FileLock* m_pLock;

@@ -3,7 +3,7 @@
 #include "PackedFile.h"
 #include "UnpackedFile.h"
 
-PackedFile::PackedFile(UnpackedFile* pFile, int size):
+PackedFile::PackedFile(UnpackedFile* pFile, offset_type size):
     m_pFile(pFile),m_Size(size),m_Buffer(4*1024)
 {
     m_Stream.zalloc = Z_NULL;
@@ -23,19 +23,24 @@ PackedFile::~PackedFile(void)
     delete m_pFile;
 }
 
-int PackedFile::Read(void* buffer, int size)
+offset_type PackedFile::Read(void* buffer, offset_type size)
 {
-    if(size<=0)
-        return 0;
-
-    m_Stream.avail_out = size;
+    if(size.offset<=0)
+    {
+        offset_type z;
+        z.offset = 0;
+        return z;
+    }
+    m_Stream.avail_out = (unsigned int)size.offset;
     m_Stream.next_out = (unsigned char*)buffer;
 
     while(m_Stream.avail_out>0)
     {
         if(m_Stream.avail_in<=0)
         {
-            m_Stream.avail_in = m_pFile->Read(&m_Buffer[0], m_Buffer.size());
+            offset_type sizetoread;
+            sizetoread.offset = m_Buffer.size();
+            m_Stream.avail_in = (unsigned int)m_pFile->Read(&m_Buffer[0], sizetoread).offset;
             m_Stream.next_in = &m_Buffer[0];
         }
         if(m_Stream.avail_in<=0)
@@ -45,24 +50,29 @@ int PackedFile::Read(void* buffer, int size)
             break;
     }
 
-    return m_Stream.next_out - (unsigned char*)buffer;
+    offset_type sizeread;
+    sizeread.offset = m_Stream.next_out - (unsigned char*)buffer;
+    return sizeread;
 }
-int PackedFile::Write(const void* buffer, int size)
+offset_type PackedFile::Write(const void* buffer, offset_type size)
 {
     assert(0&&"not implemented");
-    return 0;
+    offset_type z;
+    z.offset = 0;
+    return z;
 }
-int PackedFile::Seek(int pos, enum SeekMode mode)
+offset_type PackedFile::Seek(offset_type pos, enum SeekMode mode)
 {
     assert(0&&"not implemented");
-    return 0;
+    offset_type z;
+    z.offset = 0;
+    return z;
 }
-int PackedFile::GetSize()
+offset_type PackedFile::GetSize()
 {
     return m_Size;
 }
-int PackedFile::ReserveSpace(int size)
+void PackedFile::ReserveSpace(offset_type size)
 {
     assert(0&&"not implemented");
-    return 0;
 }

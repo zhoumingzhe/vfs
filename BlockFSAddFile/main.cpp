@@ -11,23 +11,23 @@ int main()
     _CrtSetDbgFlag ( _CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF );
     IFile::OpenMode mode = IFile::O_Truncate;
     IFile *pFile = OpenDiskFile("test.pkg", mode);
-    BlockManager* pMgr = new BlockManager(pFile, mode==IFile::O_Truncate, 1024);
+    BlockManager* pMgr = new BlockManager(pFile, mode==IFile::O_Truncate, offset_type(1024));
     BlockFS *pFS = new BlockFS(pMgr, mode);
 
-    pFS->AddFile("test123", "test123", sizeof("test123"));
-    pFS->AddFile("test1234", "test1234", sizeof("test1234"));
+    pFS->AddFile("test123", "test123", offset_type(sizeof("test123")));
+    pFS->AddFile("test1234", "test1234", offset_type(sizeof("test1234")));
 
     IFile* pf1 = pFS->OpenFileInPackage("test123");
     IFile* pf2 = pFS->OpenFileInPackage("test1234");
-    assert(pf1->GetSize()==sizeof("test123"));
-    assert(pf2->GetSize()==sizeof("test1234"));
+    assert(pf1->GetSize()==offset_type(sizeof("test123")));
+    assert(pf2->GetSize()==offset_type(sizeof("test1234")));
     char buffer[16];
-    int r = pf1->Read(buffer, sizeof(buffer));
-    assert(r == sizeof("test123"));
+    offset_type r = pf1->Read(buffer, offset_type(sizeof(buffer)));
+    assert(r == offset_type(sizeof("test123")));
     assert(strcmp(buffer, "test123")==0);
 
-    r = pf2->Read(buffer, sizeof(buffer));
-    assert(r == sizeof("test1234"));
+    r = pf2->Read(buffer, offset_type(sizeof(buffer)));
+    assert(r == offset_type(sizeof("test1234")));
     assert(strcmp(buffer, "test1234")==0);
 
     delete pf1;

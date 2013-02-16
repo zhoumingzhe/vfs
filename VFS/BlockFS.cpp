@@ -24,23 +24,28 @@ BlockFileEntry::BlockFileEntry()
 
 BlockFS::BlockFS(BlockManager* pMgr, IFile::OpenMode mode):m_pMgr(pMgr),m_pFirst(0)
 {
-    if(m_pMgr->GetBlocks()>0)
+    if(m_pMgr->GetBlocks().offset>0)
     {
-        m_pFirst = CreateBlockFile(0, mode);
+        offset_type id;
+        id.offset = 0;
+        m_pFirst = CreateBlockFile(id, mode);
     }
     else
     {
-        int i = m_pMgr->AllocBlock();
-        assert(i==0);
-        m_pFirst = CreateBlockFile(0, mode);
+        offset_type i = m_pMgr->AllocBlock();
+        assert(i.offset==0);
+        offset_type id;
+        id.offset = 0;
+        m_pFirst = CreateBlockFile(id, mode);
     }
 
-    int size = m_pFirst->GetSize();
-    assert(size%sizeof(BlockFileEntry)==0);
-    int entries = size/sizeof(BlockFileEntry);
+    offset_type size = m_pFirst->GetSize();
+    assert(size.offset%sizeof(BlockFileEntry)==0);
+    offset_type entries;
+    entries.offset = size.offset/sizeof(BlockFileEntry);
 
-    m_entry.resize(entries);
-    if(entries>0)
+    m_entry.resize((size_t)entries.offset);
+    if(entries.offset>0)
         m_pFirst->Read(&m_entry[0], size);
 
     for (int i = 0; i < (int)m_entry.size(); ++i)
@@ -48,12 +53,12 @@ BlockFS::BlockFS(BlockManager* pMgr, IFile::OpenMode mode):m_pMgr(pMgr),m_pFirst
         const BlockFileEntry& e = m_entry[i];
         if(e.name != "")//empty entry
         {
-            std::map<std::string, int>::iterator itname
+            std::map<std::string, offset_type>::iterator itname
                 = m_nameIndex.find(e.name);
             assert(itname==m_nameIndex.end());
-            m_nameIndex[e.name] = i;
+            m_nameIndex[e.name] = offset_type(i);
 
-            m_md5Index[e.index].insert(i);
+            m_md5Index[e.index].insert(offset_type(i));
         }
 
     }
@@ -67,7 +72,7 @@ BlockFS::~BlockFS(void)
 }
 
 
-UnpackedFile* BlockFS::CreateBlockFile( int blockid, IFile::OpenMode mode )
+UnpackedFile* BlockFS::CreateBlockFile( offset_type blockid, IFile::OpenMode mode )
 {
     UnpackedFile* pFile = new UnpackedFile(this, mode, blockid);
     m_opened.insert(pFile);
@@ -81,61 +86,61 @@ void BlockFS::OnFileDestory( IFile* pFile )
     m_opened.erase(it);
 }
 
-bool BlockFS::LoadCache( int id, BlockCache& cache )
+bool BlockFS::LoadCache( offset_type id, BlockCache& cache )
 {
     LoadBlockHeader(id, cache.header);
     LoadBlockData(id, cache.data);
     return true;
 }
 
-bool BlockFS::LoadBlockHeader( int id, BlockHeader &header )
+bool BlockFS::LoadBlockHeader( offset_type id, BlockHeader &header )
 {
-    m_pMgr->ReadPartialBlockData(id, &header, 0, sizeof(header));
+    m_pMgr->ReadPartialBlockData(id, &header, offset_type(0), offset_type(sizeof(header)));
     return true;
 }
 
-bool BlockFS::LoadBlockData( int id, std::vector<char>& data )
+bool BlockFS::LoadBlockData( offset_type id, std::vector<char>& data )
 {
-    data.resize(m_pMgr->GetBlockSize() - sizeof(BlockHeader));
-    m_pMgr->ReadPartialBlockData(id, &data[0], sizeof(BlockHeader), data.size());
+    data.resize((size_t)m_pMgr->GetBlockSize().offset - sizeof(BlockHeader));
+    m_pMgr->ReadPartialBlockData(id, &data[0], offset_type(sizeof(BlockHeader)), offset_type(data.size()));
     return true;
 }
 
-bool BlockFS::FlushBlockHeader( int id, const BlockHeader &header )
+bool BlockFS::FlushBlockHeader( offset_type id, const BlockHeader &header )
 {
-    m_pMgr->WritePartialBlockData(id, &header, 0, sizeof(header));
+    m_pMgr->WritePartialBlockData(id, &header, offset_type(0), offset_type(sizeof(header)));
     return true;
 }
 
-bool BlockFS::FlushBlockData( int id, const std::vector<char>& data )
+bool BlockFS::FlushBlockData( offset_type id, const std::vector<char>& data )
 {
-    assert(data.size() == m_pMgr->GetBlockSize() - sizeof(BlockHeader));
-    m_pMgr->WritePartialBlockData(id, &data[0], sizeof(BlockHeader), data.size());
+    assert(data.size() == m_pMgr->GetBlockSize().offset - sizeof(BlockHeader));
+    m_pMgr->WritePartialBlockData(id, &data[0], offset_type(sizeof(BlockHeader)), offset_type(data.size()));
     return true;
 }
 
-bool BlockFS::FlushCache( int id, BlockCache& cache )
+bool BlockFS::FlushCache( offset_type id, BlockCache& cache )
 {
     FlushBlockHeader(id, cache.header);
     FlushBlockData(id, cache.data);
     return true;
 }
 
-int BlockFS::GetBlockDataSize()
+offset_type BlockFS::GetBlockDataSize()
 {
-    return m_pMgr->GetBlockSize() - sizeof(BlockHeader);
+    return offset_type(m_pMgr->GetBlockSize().offset - sizeof(BlockHeader));
 }
 
-int BlockFS::AllocBlock(const BlockHeader& header)
+offset_type BlockFS::AllocBlock(const BlockHeader& header)
 {
-    int i = m_pMgr->AllocBlock();
+    offset_type i = m_pMgr->AllocBlock();
     FlushBlockHeader(i, header);
     return i;
 }
 
-static int CompressData(IFile *pOut, void* data, int length)
+static int CompressData(IFile *pOut, void* data, offset_type length)
 {
-    if(length <= 0)
+    if(length.offset <= 0)
         return Z_OK;
     const int chunk = 1024*1024;
     int ret;
@@ -153,7 +158,7 @@ static int CompressData(IFile *pOut, void* data, int length)
     if (ret != Z_OK)
         return ret;
 
-    strm.avail_in = length;
+    strm.avail_in = (unsigned int)length.offset;
     strm.next_in = (unsigned char*)data;
 
     do {
@@ -162,7 +167,7 @@ static int CompressData(IFile *pOut, void* data, int length)
         ret = deflate(&strm, Z_FINISH);    /* no bad return value */
         assert(ret != Z_STREAM_ERROR);  /* state not clobbered */
         have = chunk - strm.avail_out;
-        pOut->Write(&out[0], have);
+        pOut->Write(&out[0], offset_type(have));
     } while (strm.avail_out == 0);
     assert(strm.avail_in == 0);     /* all input will be used */
 
@@ -173,21 +178,21 @@ static int CompressData(IFile *pOut, void* data, int length)
     return Z_OK;
 }
 
-void BlockFS::AddFile( const char* name, char* data, int length, int compression )
+void BlockFS::AddFile( const char* name, char* data, offset_type length, int compression )
 {
     size_t name_length = strlen(name);
     assert(name_length > 0);
     assert(name_length < BlockFileEntry::max_length);
-    std::map<std::string, int>::iterator itname = m_nameIndex.find(name);
+    std::map<std::string, offset_type>::iterator itname = m_nameIndex.find(name);
     assert(itname == m_nameIndex.end());
     BlockFileEntry e;
-    GetMD5CheckSum((unsigned char*)data, (unsigned)length, e.index.md5);
+    GetMD5CheckSum((unsigned char*)data, (unsigned)length.offset, e.index.md5);
     e.index.size = length;
     e.compress_method = compression;
     strcpy(e.name, name);
 
     //if same md5 and size exist, we consider they're the same cotent;
-    std::map<MD5Index, std::set<int> >::iterator itindex = m_md5Index.find(e.index);
+    std::map<MD5Index, std::set<offset_type> >::iterator itindex = m_md5Index.find(e.index);
     if(itindex == m_md5Index.end())
     {
         e.start_id = m_pMgr->AllocBlock();
@@ -214,25 +219,25 @@ void BlockFS::AddFile( const char* name, char* data, int length, int compression
     {
         //just add refcount of the unpacked file;
         assert(!itindex->second.empty());
-        int blockidx = *(itindex->second.begin());
-        e.start_id = m_entry[blockidx].start_id;
-        assert(blockidx < (int)m_entry.size() && blockidx >= 0);
-        UnpackedFile* pFile = CreateBlockFile(m_entry[blockidx].start_id, IFile::O_Write);
+        offset_type blockidx = *(itindex->second.begin());
+        e.start_id = m_entry[(size_t)blockidx.offset].start_id;
+        assert(blockidx < offset_type(m_entry.size()) && blockidx >= offset_type(0));
+        UnpackedFile* pFile = CreateBlockFile(m_entry[(size_t)blockidx.offset].start_id, IFile::O_Write);
         pFile->SetRefCount(pFile->GetRefCount()+1);
         pFile->FlushHeaderToDisk();
         delete pFile;
     }
 
     //need optimization to find the free entry
-    int i = FindFirstUnusedEntry();
-    if(i > 0)
+    offset_type i = FindFirstUnusedEntry();
+    if(i >= offset_type(0))
     {
-        assert(i < (int)m_entry.size());
-        m_entry[i] = e;
+        assert(i < offset_type(m_entry.size()));
+        m_entry[(size_t)i.offset] = e;
     }
     else
     {
-        i = m_entry.size();
+        i.offset = m_entry.size();
         m_entry.push_back(e);
     }
     FlushEntry(i);
@@ -242,24 +247,24 @@ void BlockFS::AddFile( const char* name, char* data, int length, int compression
 
 }
 
-int BlockFS::FindFirstUnusedEntry()
+offset_type BlockFS::FindFirstUnusedEntry()
 {
     int i = 0;
     for(; i< (int)m_entry.size(); ++i)
     {
         if(m_entry[i].name[0] == 0)
-            return i;
+            return offset_type(i);
     }
-    return -1;
+    return offset_type(-1);
 }
 
 IFile* BlockFS::OpenFileInPackage( const char* name )
 {
-    std::map<std::string, int>::iterator it = m_nameIndex.find(name);
+    std::map<std::string, offset_type>::iterator it = m_nameIndex.find(name);
     if(it == m_nameIndex.end())
         return 0;
-    assert(it->second < (int)m_entry.size());
-    const BlockFileEntry& e = m_entry[it->second];
+    assert(it->second < offset_type(m_entry.size()));
+    const BlockFileEntry& e = m_entry[(size_t)it->second.offset];
     assert(strcmp(e.name, name)==0);
     switch (e.compress_method)
     {
@@ -280,7 +285,7 @@ IFile* BlockFS::OpenFileInPackage( const char* name )
 
 }
 
-int BlockFS::GetNextBlockId( int blockid, int beginid )
+offset_type BlockFS::GetNextBlockId( offset_type blockid, offset_type beginid )
 {
     assert(blockid<=m_pMgr->GetBlocks());
     assert(beginid<=m_pMgr->GetBlocks());
@@ -288,12 +293,12 @@ int BlockFS::GetNextBlockId( int blockid, int beginid )
     LoadBlockHeader(blockid, header);
 
     if(header.next == beginid)
-        return -1;
+        return offset_type(-1);
     else
         return header.next;
 }
 
-int BlockFS::AppendOrGetNextBlockId( int blockid, int beginid )
+offset_type BlockFS::AppendOrGetNextBlockId( offset_type blockid, offset_type beginid )
 {
     assert(blockid<=m_pMgr->GetBlocks());
     assert(beginid<=m_pMgr->GetBlocks());
@@ -305,10 +310,10 @@ int BlockFS::AppendOrGetNextBlockId( int blockid, int beginid )
         return header.next;
 }
 
-int BlockFS::AppendBlock( int end, int begin )
+offset_type BlockFS::AppendBlock( offset_type end, offset_type begin )
 {
     BlockHeader header = {begin, end};
-    int i = AllocBlock(header);
+    offset_type i = AllocBlock(header);
 
     LoadBlockHeader(end, header);
     assert(header.next == begin);
@@ -326,27 +331,27 @@ int BlockFS::AppendBlock( int end, int begin )
 void BlockFS::RemoveFile( const char* name )
 {
     assert(name[0]&&"file name is null");
-    std::map<std::string, int>::iterator it = m_nameIndex.find(name);
+    std::map<std::string, offset_type>::iterator it = m_nameIndex.find(name);
     if(it == m_nameIndex.end())
         assert(0&&"file not exist");
-    int id = it->second;
-    assert(id < (int)m_entry.size());
-    BlockFileEntry& entry = m_entry[id];
+    offset_type id = it->second;
+    assert(id < offset_type(m_entry.size()));
+    BlockFileEntry& entry = m_entry[(size_t)id.offset];
     assert(entry.name[0] && "name index and entry vector inconsistent");
     assert(strcmp(entry.name, name) == 0&&"name index and entry vector inconsistent");
-    int blockid = entry.start_id;
+    offset_type blockid = entry.start_id;
 
-    std::map<MD5Index, std::set<int> >::iterator itmd5 = m_md5Index.find(entry.index);
+    std::map<MD5Index, std::set<offset_type> >::iterator itmd5 = m_md5Index.find(entry.index);
     assert(itmd5 != m_md5Index.end());
-    std::set<int>::iterator itset = itmd5->second.find(id);
+    std::set<offset_type>::iterator itset = itmd5->second.find(id);
     assert(itset != itmd5->second.end());
 
     BlockHeader header;
     do
     {
         LoadBlockHeader(blockid, header);
-        assert(header.next >= 0 && "error block id");
-        assert(header.prev >= 0 && "error block id");
+        assert(header.next >= offset_type(0) && "error block id");
+        assert(header.prev >= offset_type(0) && "error block id");
         m_pMgr->RecycleBlock(header.prev);
     }
     while(header.prev != blockid);
@@ -361,17 +366,17 @@ void BlockFS::RemoveFile( const char* name )
 
 }
 
-void BlockFS::FlushEntry( int entry )
+void BlockFS::FlushEntry( offset_type entry )
 {
-    m_pFirst->Seek(entry*sizeof(m_entry[0]), IFile::S_Begin);
-    m_pFirst->Write(&m_entry[entry], sizeof(m_entry[entry]));
+    m_pFirst->Seek(offset_type(entry.offset*sizeof(m_entry[0])), IFile::S_Begin);
+    m_pFirst->Write(&m_entry[(size_t)entry.offset], offset_type(sizeof(m_entry[0])));
 }
 
 void BlockFS::ExportFileNames( std::vector<std::string>& names )
 {
     names.clear();
     names.reserve(m_nameIndex.size());
-    for(std::map<std::string, int>::iterator it = m_nameIndex.begin();
+    for(std::map<std::string, offset_type>::iterator it = m_nameIndex.begin();
         it != m_nameIndex.end(); ++it)
     {
         names.push_back(it->first);

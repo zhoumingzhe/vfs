@@ -10,38 +10,38 @@ int main()
     _CrtSetDbgFlag ( _CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF );
     IFile::OpenMode mode = IFile::O_Truncate;
     IFile *pFile = OpenDiskFile("test.pkg", mode);
-    BlockManager* pMgr = new BlockManager(pFile, mode==IFile::O_Truncate, 1024);
+    BlockManager* pMgr = new BlockManager(pFile, mode==IFile::O_Truncate, offset_type(1024));
     BlockFS *pFS = new BlockFS(pMgr, mode);
 
     const int size = 2048;
     char* buffer = new char[size];
     for(int i = 0; i<size; ++i)
         buffer[i] = i%10;
-    int size_write = pFS->First()->Write(buffer, size);
-    assert(size==size_write);
+    offset_type size_write = pFS->First()->Write(buffer, offset_type(size));
+    assert(offset_type(size)==size_write);
     srand((unsigned)time(0));
     for(int i = 0; i<4096; ++i)
     {
         int offset = rand()%size;
-        pFS->First()->Seek(offset, IFile::S_Begin);
+        pFS->First()->Seek(offset_type(offset), IFile::S_Begin);
         char c;
-        pFS->First()->Read(&c, sizeof(c));
+        pFS->First()->Read(&c, offset_type(sizeof(c)));
         assert(c==offset%10);
     }
 
-    pFS->First()->Seek(0, IFile::S_Begin);
+    pFS->First()->Seek(offset_type(0), IFile::S_Begin);
     char* buffer1 = new char[size];
-    int size_read = pFS->First()->Read(buffer1, size);
-    assert(size_read == size);
+    offset_type size_read = pFS->First()->Read(buffer1, offset_type(size));
+    assert(size_read == offset_type(size));
     int cmp_result = memcmp(buffer1, buffer, size);
     assert(!cmp_result);
 
     for(int i = 0; i<4096; ++i)
     {
         int offset = rand()%size;
-        pFS->First()->Seek(offset, IFile::S_Begin);
+        pFS->First()->Seek(offset_type(offset), IFile::S_Begin);
         char c;
-        pFS->First()->Read(&c, sizeof(c));
+        pFS->First()->Read(&c, offset_type(sizeof(c)));
         assert(c==offset%10);
     }
     delete[]buffer1;

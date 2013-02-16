@@ -9,8 +9,8 @@ class BlockManager;
 
 struct BlockHeader
 {
-    int next;
-    int prev;
+    offset_type next;
+    offset_type prev;
 };
 
 struct BlockCache
@@ -24,7 +24,7 @@ typedef unsigned char MD5[16];
 struct MD5Index
 {
     MD5 md5;
-    int size;
+    offset_type size;
     MD5Index();
     bool operator<(const MD5Index& rhs)const;
 };
@@ -37,7 +37,7 @@ struct BlockFileEntry
     static const int compress_zlib = 1;
 
     char name[max_length];
-    int start_id;
+    offset_type start_id;
     int compress_method;
     MD5Index index;
     BlockFileEntry();
@@ -50,44 +50,44 @@ public:
     BlockFS(BlockManager* pMgr, IFile::OpenMode mode);
     ~BlockFS(void);
 
-    UnpackedFile* CreateBlockFile(int blockid, IFile::OpenMode mode);
+    UnpackedFile* CreateBlockFile(offset_type blockid, IFile::OpenMode mode);
 
-    void AddFile(const char* name, char* data, int length,
+    void AddFile(const char* name, char* data, offset_type length,
         int compression = BlockFileEntry::compress_uncompressed);
     void RemoveFile(const char* name);
 
     IFile* OpenFileInPackage(const char* name);
     void OnFileDestory(IFile* pFile);
-    bool LoadCache(int id, BlockCache& cache);
-    bool FlushCache(int id, BlockCache& cache);
+    bool LoadCache(offset_type id, BlockCache& cache);
+    bool FlushCache(offset_type id, BlockCache& cache);
 
-    bool LoadBlockHeader(int id, BlockHeader &header);
-    bool LoadBlockData(int id, std::vector<char>& data);
+    bool LoadBlockHeader(offset_type id, BlockHeader &header);
+    bool LoadBlockData(offset_type id, std::vector<char>& data);
 
-    bool FlushBlockHeader(int id, const BlockHeader &header);
-    bool FlushBlockData(int id, const std::vector<char>& data);
+    bool FlushBlockHeader(offset_type id, const BlockHeader &header);
+    bool FlushBlockData(offset_type id, const std::vector<char>& data);
 
-    int GetBlockDataSize();
-    int AllocBlock(const BlockHeader& header);
+    offset_type GetBlockDataSize();
+    offset_type AllocBlock(const BlockHeader& header);
 
-    int GetNextBlockId(int blockid, int beginid);
-    int AppendOrGetNextBlockId(int blockid, int beginid);
+    offset_type GetNextBlockId(offset_type blockid, offset_type beginid);
+    offset_type AppendOrGetNextBlockId(offset_type blockid, offset_type beginid);
 
-    int AppendBlock(int end, int begin);
+    offset_type AppendBlock(offset_type end, offset_type begin);
     void ExportFileNames(std::vector<std::string>& names);
     //test only;
     IFile* First() const { return m_pFirst; }
 private:
 
-    int FindFirstUnusedEntry();
-    void FlushEntry(int entry);
+    offset_type FindFirstUnusedEntry();
+    void FlushEntry(offset_type entry);
 
     BlockManager *m_pMgr;
     std::set<IFile*> m_opened;
     IFile* m_pFirst;
 
     std::vector<BlockFileEntry> m_entry;
-    std::map<std::string, int> m_nameIndex;
-    std::map<MD5Index, std::set<int> > m_md5Index;
+    std::map<std::string, offset_type> m_nameIndex;
+    std::map<MD5Index, std::set<offset_type> > m_md5Index;
 };
 

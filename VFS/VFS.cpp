@@ -32,7 +32,7 @@ VFSData& GetVfsData()
 void VFS::SetPackage( const char* name )
 {
     GetVfsData().pFile = OpenDiskFile(name, IFile::O_ReadOnly);
-    GetVfsData().pMgr = new BlockManager(GetVfsData().pFile, IFile::O_ReadOnly, 1024);
+    GetVfsData().pMgr = new BlockManager(GetVfsData().pFile, IFile::O_ReadOnly, offset_type(1024));
     GetVfsData().pFS = new BlockFS(GetVfsData().pMgr, IFile::O_ReadOnly);
 }
 

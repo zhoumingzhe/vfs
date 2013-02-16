@@ -3,14 +3,14 @@
 #include "UnpackedFile.h"
 #include "BlockFS.h"
 
-UnpackedFile::UnpackedFile(BlockFS* pFS, OpenMode mode, int beginid):
+UnpackedFile::UnpackedFile(BlockFS* pFS, OpenMode mode, offset_type beginid):
     m_pFS(pFS),
-    m_Current(0),
     m_Cacheid(beginid),
     m_Beginid(beginid),
-    m_CacheChanged(false),
-    m_CacheSeq(0)
+    m_CacheChanged(false)
 {
+    m_Current.offset = 0;
+    m_CacheSeq.offset = 0;
     m_pFS->LoadBlockData(m_Cacheid, m_Cache);
 
     //for simplicity;
@@ -27,88 +27,103 @@ UnpackedFile::~UnpackedFile(void)
     m_pFS->OnFileDestory(this);
 }
 
-int UnpackedFile::Read( void* buffer, int size )
+offset_type UnpackedFile::Read( void* buffer, offset_type size )
 {
-    assert(size>=0);
-    if(size <= 0)
-        return 0;
+    offset_type ret;
+    assert(size.offset>=0);
+    assert(size.offset<0xFFFFFFFFF);
+    if(size.offset <= 0)
+    {
+        ret.offset = 0;
+        return ret;
+    }
 
-    if(size>GetSize() - m_Current)
-        size = GetSize() - m_Current;
+    if(size.offset > GetSize().offset - m_Current.offset)
+        size.offset = GetSize().offset - m_Current.offset;
 
-    int offset = CalcOffsetInCache(m_Current, GetCacheSeq());
-    assert(offset >= 0);
-    int blocksize = m_pFS->GetBlockDataSize();
+    offset_type offset = CalcOffsetInCache(m_Current, GetCacheSeq());
+    assert(offset.offset >= 0);
+    offset_type blocksize = m_pFS->GetBlockDataSize();
 
     //Seek to the right position
     if (offset >= blocksize)
     {
         FlushCache();
-        int cacheid = GetCacheid();
-        int cacheseq = GetCacheSeq();
+        offset_type cacheid = GetCacheid();
+        offset_type cacheseq = GetCacheSeq();
         while (offset >= blocksize)
         {
             //we reach the last block,
             //nothing to read
             cacheid = m_pFS->GetNextBlockId(cacheid, m_Beginid);
-            if(cacheid == -1)
+            if(cacheid.offset == -1)
                 break;
-            ++cacheseq;
+            ++cacheseq.offset;
             //need some optimization, just load the block header
             offset = CalcOffsetInCache(m_Current, cacheseq);
         }
-        if(cacheid == -1)
-            return 0;
+        if(cacheid.offset == -1)
+        {
+            offset_type ret;
+            ret.offset = 0;
+            return ret;
+        }
         SetCacheState(cacheid, cacheseq);
         m_pFS->LoadBlockData(GetCacheid(), m_Cache);
 
     }
-    int size_left = size;
+    offset_type size_left = size;
     //read in Loop
-    while (size_left > 0)
+    while (size_left.offset > 0)
     {
         //read in cache
         assert(offset < blocksize);
-        int size_to_read = (blocksize - offset)<size_left?
-            (blocksize - offset):size_left;
-        assert((int)m_Cache.size() >= offset + size_to_read);
-        memcpy(buffer, &m_Cache[offset], size_to_read);
+        int size_to_read = (blocksize.offset - offset.offset)<size_left.offset?
+            (int)(blocksize.offset - offset.offset):(int)size_left.offset;
+        assert(m_Cache.size() >= offset.offset + size_to_read);
+        memcpy(buffer, &m_Cache[(size_t)offset.offset], size_to_read);
         //this is necessary because of previous write
         FlushCache();
 
         //advance data
-        m_Current += size_to_read;
-        size_left -= size_to_read;
+        m_Current.offset += size_to_read;
+        size_left.offset -= size_to_read;
 
-        if(size_left > 0)
+        if(size_left.offset > 0)
         {
             buffer = (char*)buffer + size_to_read;
             //we reach the last block,
             //return the bytes read
-            int cacheid = m_pFS->GetNextBlockId(m_Cacheid, m_Beginid);
-            if(cacheid == -1)
+            offset_type cacheid = m_pFS->GetNextBlockId(m_Cacheid, m_Beginid);
+            if(cacheid.offset == -1)
             {
-                return size-size_left;
+                offset_type ret;
+                ret.offset = size.offset - size_left.offset;
+                return ret;
             }
-
-            SetCacheState(cacheid, GetCacheSeq()+1);
+            offset_type next_seq;
+            next_seq.offset = GetCacheSeq().offset + 1;
+            SetCacheState(cacheid, next_seq);
             m_pFS->LoadBlockData(GetCacheid(), m_Cache);
             offset = CalcOffsetInCache(m_Current, GetCacheSeq());
-            assert(offset==0);
+            assert(offset.offset==0);
         }
     }
     return size;
 }
 
-int UnpackedFile::Write( const void* buffer, int size )
+offset_type UnpackedFile::Write( const void* buffer, offset_type size )
 {
-    assert(size>=0);
-    if(size <= 0)
-        return 0;
-
-    int offset = CalcOffsetInCache(m_Current, GetCacheSeq());
-    assert(offset >= 0);
-    int blocksize = m_pFS->GetBlockDataSize();
+    assert(size.offset>=0);
+    if(size.offset <= 0)
+    {
+        offset_type ret;
+        ret.offset = 0;
+        return ret;
+    }
+    offset_type offset = CalcOffsetInCache(m_Current, GetCacheSeq());
+    assert(offset.offset >= 0);
+    offset_type blocksize = m_pFS->GetBlockDataSize();
 
     //Seek to the right position
     if (offset >= blocksize)
@@ -118,85 +133,93 @@ int UnpackedFile::Write( const void* buffer, int size )
         {
             //we reach the last block,
             //allocate blocks at the end
-            int cacheid = m_pFS->AppendOrGetNextBlockId(GetCacheid(), m_Beginid);
-            SetCacheState(cacheid, GetCacheSeq()+1);
+            offset_type cacheid = m_pFS->AppendOrGetNextBlockId(GetCacheid(), m_Beginid);
+            offset_type next_seq;
+            next_seq.offset = GetCacheSeq().offset + 1;
+            SetCacheState(cacheid, next_seq);
             offset = CalcOffsetInCache(m_Current, GetCacheSeq());
         }
         m_pFS->LoadBlockData(GetCacheid(), m_Cache);
     }
 
-    int size_left = size;
+    offset_type size_left = size;
     //Write in Loop
-    while (size_left > 0)
+    while (size_left.offset > 0)
     {
         //Write in cache
         assert(offset < blocksize);
-        int size_to_write = (blocksize - offset)<size_left?
-            (blocksize - offset):size_left;
-        assert((int)m_Cache.size() >= offset + size_to_write);
-        memcpy(&m_Cache[offset], buffer, size_to_write);
+        offset_type size_to_write;
+        size_to_write.offset = (blocksize.offset - offset.offset)<size_left.offset?
+            (blocksize.offset - offset.offset):size_left.offset;
+        assert(m_Cache.size() >= offset.offset + size_to_write.offset);
+        memcpy(&m_Cache[(size_t)offset.offset], buffer, (size_t)size_to_write.offset);
         m_CacheChanged = true;
         FlushCache();
 
         //advance data
-        m_Current += size_to_write;
-        size_left -= size_to_write;
+        m_Current.offset += size_to_write.offset;
+        size_left.offset -= size_to_write.offset;
 
-        if(size_left > 0)
+        if(size_left.offset > 0)
         {
-            buffer = (char*)buffer + size_to_write;
+            buffer = (char*)buffer + size_to_write.offset;
             //we reach the last block,
             //allocate blocks at the end
-            int cacheid = m_pFS->AppendOrGetNextBlockId(m_Cacheid, m_Beginid);
-            SetCacheState(cacheid, GetCacheSeq()+1);
+            offset_type cacheid = m_pFS->AppendOrGetNextBlockId(m_Cacheid, m_Beginid);
+            offset_type next_seq;
+            next_seq.offset = GetCacheSeq().offset + 1;
+            SetCacheState(cacheid, next_seq);
             if(size_left >= m_pFS->GetBlockDataSize())
                 m_pFS->LoadBlockData(GetCacheid(), m_Cache);
             offset = CalcOffsetInCache(m_Current, GetCacheSeq());
-            assert(offset==0);
+            assert(offset.offset==0);
         }
     }
 
-    if(m_Current > GetDataSize())
+    if(m_Current.offset > GetDataSize())
     {
-        SetDataSize(m_Current);
+        SetDataSize((int)m_Current.offset);
         FlushHeaderToDisk();
     }
 
     return size;
 }
 
-int UnpackedFile::Seek( int pos, enum SeekMode mode )
+offset_type UnpackedFile::Seek( offset_type pos, enum SeekMode mode )
 {
-    int old = m_Current;
+    offset_type old = m_Current;
     switch (mode)
     {
     case IFile::S_Current:
-        m_Current += pos;
+        m_Current.offset += pos.offset;
         break;
     case IFile::S_End:
-        m_Current = GetDataSize() - pos;
+        m_Current.offset = GetDataSize() - pos.offset;
         break;
     case IFile::S_Begin:
-        m_Current = pos;
+        m_Current.offset = pos.offset;
         break;
     default:
         assert(0&&"Wrong parameter");
         break;
     }
-    SetCacheState(m_Beginid, 0);
+    offset_type z;
+    z.offset = 0;
+    SetCacheState(m_Beginid, z);
     m_pFS->LoadBlockData(m_Beginid, m_Cache);
     return old;
 }
 
-int UnpackedFile::GetSize()
+offset_type UnpackedFile::GetSize()
 {
-    return GetDataSize();
+    offset_type ret;
+    ret.offset = GetDataSize();
+    return ret;
 }
 
-int UnpackedFile::ReserveSpace( int size )
+void UnpackedFile::ReserveSpace( offset_type size )
 {
     assert(0&&"not implemented");
-    return 0;
 }
 
 int UnpackedFile::GetRefCount()
@@ -231,9 +254,11 @@ void UnpackedFile::FlushHeaderToCache()
     }
 }
 
-int UnpackedFile::CalcOffsetInCache( int offset, int seq)
+offset_type UnpackedFile::CalcOffsetInCache( offset_type offset, offset_type seq)
 {
-    return offset + sizeof(UnpackedFileHeader) - seq*m_pFS->GetBlockDataSize();
+    offset_type ret;
+    ret.offset = offset.offset + sizeof(UnpackedFileHeader) - seq.offset*m_pFS->GetBlockDataSize().offset;
+    return ret;
 }
 
 void UnpackedFile::FlushCache()
@@ -252,7 +277,9 @@ void UnpackedFile::FlushHeaderToDisk()
     if(GetCacheid() != m_Beginid)
     {
         m_pFS->LoadBlockData(m_Beginid, m_Cache);
-        SetCacheState(m_Beginid, 0);
+        offset_type z;
+        z.offset = 0;
+        SetCacheState(m_Beginid, z);
         FlushHeaderToCache();
     }
     assert(m_Beginid == GetCacheid());
@@ -260,7 +287,7 @@ void UnpackedFile::FlushHeaderToDisk()
 
 }
 
-void UnpackedFile::SetCacheState( int id, int seq )
+void UnpackedFile::SetCacheState( offset_type id, offset_type seq )
 {
     m_Cacheid = id;
     m_CacheSeq = seq;

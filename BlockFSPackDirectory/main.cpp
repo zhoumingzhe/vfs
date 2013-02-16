@@ -11,7 +11,7 @@ int main()
     _CrtSetDbgFlag ( _CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF );
     IFile::OpenMode mode = IFile::O_Truncate;
     IFile *pFile = OpenDiskFile("test.pkg", mode);
-    BlockManager* pMgr = new BlockManager(pFile, mode==IFile::O_Truncate, 1024);
+    BlockManager* pMgr = new BlockManager(pFile, mode==IFile::O_Truncate, offset_type(1024));
     BlockFS *pFS = new BlockFS(pMgr, mode);
 
     WIN32_FIND_DATAA finddata;
@@ -28,8 +28,8 @@ int main()
             std::string name = "input\\";
             name += finddata.cFileName;
             IFile* pTemp = OpenDiskFile(name.c_str(), IFile::O_ReadOnly);
-            int length = pTemp->GetSize();
-            char* buff = new char[length];
+            offset_type length = pTemp->GetSize();
+            char* buff = new char[(size_t)length.offset];
             pTemp->Read(buff, length);
             pFS->AddFile(name.c_str(), buff, length, 1);
             delete[]buff;

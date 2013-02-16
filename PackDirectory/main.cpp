@@ -27,8 +27,8 @@ void AddFileRecursively(const std::string dir, BlockFS* pFS)
             name += "/";
             name += finddata.cFileName;
             IFile* pTemp = OpenDiskFile(name.c_str(), IFile::O_ReadOnly);
-            int length = pTemp->GetSize();
-            char* buff = new char[length];
+            offset_type length = pTemp->GetSize();
+            char* buff = new char[(size_t)length.offset];
             pTemp->Read(buff, length);
             std::transform(name.begin(), name.end(), name.begin(), tolower);
             printf("adding %s, %d bytes\n", name.c_str(), length);
@@ -51,7 +51,7 @@ int main(int argc, char* argv[])
     }
     IFile::OpenMode mode = IFile::O_Truncate;
     IFile *pFile = OpenDiskFile(argv[1], mode);
-    BlockManager* pMgr = new BlockManager(pFile, mode==IFile::O_Truncate, 1024);
+    BlockManager* pMgr = new BlockManager(pFile, mode==IFile::O_Truncate, offset_type(1024));
     BlockFS *pFS = new BlockFS(pMgr, mode);
 
     AddFileRecursively(argv[2], pFS);

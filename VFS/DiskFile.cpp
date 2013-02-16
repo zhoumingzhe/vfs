@@ -46,25 +46,31 @@ DiskFile::~DiskFile(void)
     CloseHandle(m_hFile);
 }
 
-int DiskFile::Read( void* buffer, int size )
+offset_type DiskFile::Read( void* buffer, offset_type size )
 {
-    DWORD ret;
-    BOOL result = ReadFile(m_hFile, buffer, size, &ret, NULL);
+    offset_type ret;
+    DWORD bytes_read = 0;
+    assert(size.offset < 0xffffffff);
+    BOOL result = ReadFile(m_hFile, buffer, (DWORD)size.offset, &bytes_read, NULL);
     assert(result);
-    return (int)ret;
-}
-
-int DiskFile::Write( const void* buffer, int size )
-{
-    assert(m_eMode != IFile::O_ReadOnly);
-    DWORD ret;
-    BOOL result = WriteFile(m_hFile, buffer, size, &ret, NULL);
-    assert(result);
-    //FlushFileBuffers(m_hFile);
+    ret.offset = bytes_read;
     return ret;
 }
 
-int DiskFile::Seek( int pos, enum SeekMode mode )
+offset_type DiskFile::Write( const void* buffer, offset_type size )
+{
+    assert(m_eMode != IFile::O_ReadOnly);
+    assert(size.offset<0xffffffff);
+    offset_type ret;
+    DWORD bytes_write = 0;
+    BOOL result = WriteFile(m_hFile, buffer, (DWORD)size.offset, &bytes_write, NULL);
+    assert(result);
+    //FlushFileBuffers(m_hFile);
+    ret.offset = bytes_write;
+    return ret;
+}
+
+offset_type DiskFile::Seek( offset_type pos, enum SeekMode mode )
 {
     int api_mode = FILE_BEGIN;
     switch(mode)
@@ -82,21 +88,28 @@ int DiskFile::Seek( int pos, enum SeekMode mode )
         assert(0);
         break;
     }
-    DWORD result = SetFilePointer(m_hFile, pos, NULL, api_mode);
+    long distancelow = pos.low;
+    long distancehigh = pos.high;
+    offset_type ret;
+    DWORD result = SetFilePointer(m_hFile, distancelow, &distancehigh, api_mode);
     assert(result != INVALID_SET_FILE_POINTER || NO_ERROR == GetLastError());
-    return result;
+    ret.low = result;
+    ret.high = distancehigh;
+    return ret;
 }
 
-int DiskFile::GetSize()
+offset_type DiskFile::GetSize()
 {
-    return GetFileSize(m_hFile, NULL);
+    offset_type ret;
+
+    ret.low = GetFileSize(m_hFile, (LPDWORD)&ret.high);
+    return ret;
 }
 
-int DiskFile::ReserveSpace( int size )
+void DiskFile::ReserveSpace( offset_type size )
 {
     assert(m_eMode != O_ReadOnly);
     Seek(size, S_Begin);
     DWORD result = SetEndOfFile(m_hFile);
     assert(result);
-    return 0;
 }
