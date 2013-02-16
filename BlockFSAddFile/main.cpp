@@ -6,6 +6,8 @@
 #include "../VFS/BlockFS.h"
 #include "../VFS/UnpackedFile.h"
 
+char data[1024*1024]="\0";
+char data1[1024]="\0";
 int main()
 {
     _CrtSetDbgFlag ( _CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF );
@@ -14,24 +16,14 @@ int main()
     BlockManager* pMgr = new BlockManager(pFile, mode==IFile::O_Truncate, offset_type(1024));
     BlockFS *pFS = new BlockFS(pMgr, mode);
 
-    pFS->AddFile("test123", "test123", offset_type(sizeof("test123")));
-    pFS->AddFile("test1234", "test1234", offset_type(sizeof("test1234")));
-
-    IFile* pf1 = pFS->OpenFileInPackage("test123");
-    IFile* pf2 = pFS->OpenFileInPackage("test1234");
-    assert(pf1->GetSize()==offset_type(sizeof("test123")));
-    assert(pf2->GetSize()==offset_type(sizeof("test1234")));
-    char buffer[16];
-    offset_type r = pf1->Read(buffer, offset_type(sizeof(buffer)));
-    assert(r == offset_type(sizeof("test123")));
-    assert(strcmp(buffer, "test123")==0);
-
-    r = pf2->Read(buffer, offset_type(sizeof(buffer)));
-    assert(r == offset_type(sizeof("test1234")));
-    assert(strcmp(buffer, "test1234")==0);
-
-    delete pf1;
-    delete pf2;
+    for(int i = 0; i< 4*1024; ++i)
+    {
+        char buff[30];
+        sprintf_s(buff, "%d", i);
+        memset(data1, 0, sizeof(data1));
+        sprintf_s(data1, "%d", i);
+        pFS->AddFile(buff, data, offset_type(sizeof(data)+sizeof(data1)));
+    }
     delete pFS;
     delete pMgr;
     delete pFile;
