@@ -40,6 +40,26 @@ void ScanFiles(const std::string& dir, std::set<std::string>& names)
 
 const offset_type block_size(4*1024);
 const offset_type max_hs_size(4*1024);
+
+void HashToString(const unsigned char hash[16], char str[16*2+1])
+{
+    for(int i = 0; i < 16; ++i)
+        sprintf(&str[i*2], "%02x", (int)hash[i]);
+    str[16*2] = '\0';
+}
+void StringToHash(const char str[32], unsigned char hash[16])
+{
+    for(int i = 0; i < 16; ++i)
+    {
+        char tmp[3];
+        tmp[0] = str[i*2];
+        tmp[1] = str[i*2 + 1];
+        tmp[2] = '\0';
+        char *st;
+        hash[i] = (unsigned char)strtol(tmp, &st, 16);
+    }
+}
+
 void GenerateHash(const std::string & name, FILE* hash_file)
 {
     MD5Context ctx;
@@ -66,9 +86,10 @@ void GenerateHash(const std::string & name, FILE* hash_file)
         unsigned char result[16];
         MD5Final(result, &ctx_file);
 
-        for(int i = 0; i < sizeof(result); ++i)
-            fprintf(hashset_file, "%02x", int(result[i]));
-        fprintf(hashset_file, "\n");
+
+        char out[33];
+        HashToString(result, out);
+        fprintf(hashset_file, "%s\n", out);
     }
     long l = ftell(hashset_file);
     fclose(hashset_file);
@@ -76,11 +97,10 @@ void GenerateHash(const std::string & name, FILE* hash_file)
     unsigned char result[16];
     MD5Final(result, &ctx);
 
-    fprintf(hash_file, "%s ", name.c_str());
+    char out[33];
+    HashToString(result, out);
 
-    for(int i = 0; i < sizeof(result); ++i)
-        fprintf(hash_file, "%02x", int(result[i]));
-    fprintf(hash_file, "\n");
+    fprintf(hash_file, "%s %ld %s\n", name.c_str(), l, out);
 
     if(l>max_hs_size.offset)
     {
