@@ -37,6 +37,10 @@ void ScanFiles(const std::string& dir, std::set<std::string>& names)
     }
     FindClose(hfine);
 }
+struct Md5Digest
+{
+    unsigned char hash[16];
+};
 
 const offset_type block_size(4*1024);
 const offset_type max_hs_size(4*1024);
@@ -60,18 +64,16 @@ void StringToHash(const char str[32], unsigned char hash[16])
     }
 }
 
-void GenerateHash(const std::string & name, FILE* hash_file)
+void GenerateHash(const std::string & name, unsigned char hash[16],
+                  std::vector<Md5Digest> &hash_set, offset_type & length)
 {
+    hash_set.clear();
     MD5Context ctx;
     MD5Init(&ctx, 0);
 
-    std::string hashset_name(name + ".hs");
-    FILE* hashset_file = fopen(hashset_name.c_str(), "w");
-
     IFile* pTemp = OpenDiskFile(name.c_str(), IFile::O_ReadOnly);
-    offset_type length = pTemp->GetSize();
-
-    fprintf(hashset_file, "%d\n", length.offset);
+    length = pTemp->GetSize();
+    hash_set.reserve(size_t(length.offset/block_size.offset));
     std::vector<unsigned char> buffer((size_t)block_size.offset);
     for(offset_type i(0); i<length; i = i + block_size)
     {
@@ -79,33 +81,16 @@ void GenerateHash(const std::string & name, FILE* hash_file)
         assert(size_read.offset>0);
         MD5Update(&ctx, &buffer[0], (unsigned int)size_read.offset);
 
-
         MD5Context ctx_file;
         MD5Init(&ctx_file, 0);
         MD5Update(&ctx_file, &buffer[0], (unsigned int)size_read.offset);
-        unsigned char result[16];
-        MD5Final(result, &ctx_file);
-
-
-        char out[33];
-        HashToString(result, out);
-        fprintf(hashset_file, "%s\n", out);
+        Md5Digest result;
+        MD5Final(&result.hash[0], &ctx_file);
+        hash_set.push_back(result);
     }
-    long l = ftell(hashset_file);
-    fclose(hashset_file);
     delete pTemp;
-    unsigned char result[16];
-    MD5Final(result, &ctx);
+    MD5Final(hash, &ctx);
 
-    char out[33];
-    HashToString(result, out);
-
-    fprintf(hash_file, "%s %ld %s\n", name.c_str(), l, out);
-
-    if(l>max_hs_size.offset)
-    {
-        GenerateHash(hashset_name, hash_file);
-    }
 }
 int main(int argc, char** argv)
 {
@@ -137,7 +122,35 @@ int main(int argc, char** argv)
     for(std::set<std::string>::iterator it = names.begin();
         it != names.end(); ++it)
     {
-        GenerateHash(*it, hash_file);
+        unsigned char hash[16];
+        std::vector<Md5Digest> hset;
+        std::string name = *it;
+        do
+        {
+            offset_type l;
+            GenerateHash(name, hash, hset, l);
+
+            char out[33];
+            HashToString(hash, out);
+            fprintf(hash_file, "%s %lld %s\n", name.c_str(), l.offset, out);
+
+            if(hset.size()>32)
+            {
+                std::string hashset_name(name + ".hs");
+                FILE* hashset_file = fopen(hashset_name.c_str(), "w");
+                fprintf(hashset_file, "%lld\n", l.offset);
+
+                for(std::vector<Md5Digest>::iterator iter = hset.begin();
+                    iter != hset.end() ; ++iter)
+                {
+                    char out[33];
+                    HashToString(iter->hash, out);
+                    fprintf(hashset_file, "%s\n", out);
+                }
+                fclose(hashset_file);
+                name = hashset_name;
+            }
+        }while(hset.size()>32);
     }
 
     fclose(hash_file);
