@@ -38,6 +38,7 @@ SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY_RELWITHDEBINFO ${PROJECT_BINARY_DIR}/RelWithD
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 
 add_subdirectory(VFS)
+add_subdirectory(Md5Utils)
 add_subdirectory(zlib)
 add_subdirectory(BlockFSAddFile)
 add_subdirectory(BlockFSCreate)
