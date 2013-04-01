@@ -9,7 +9,7 @@
 void ScanFiles(const std::string& dir, std::set<std::string>& names)
 {
     WIN32_FIND_DATAA finddata;
-    std::string searchstring = dir + "/*";
+    std::string searchstring = dir + "*";
     HANDLE hfine = FindFirstFileA(searchstring.c_str(), &finddata);
     if (hfine != INVALID_HANDLE_VALUE)
     {
@@ -20,13 +20,12 @@ void ScanFiles(const std::string& dir, std::set<std::string>& names)
                 if(strcmp(finddata.cFileName, ".svn")!=0&&
                     strcmp(finddata.cFileName, ".")!=0&&
                     strcmp(finddata.cFileName, "..")!=0)
-                    ScanFiles(dir + "/" + finddata.cFileName, names);
+                    ScanFiles(dir + finddata.cFileName + "/", names);
                 continue;
             }
             if(strstr(finddata.cFileName, ".hs")==0)
             {
                 std::string name = dir;
-                name += "/";
                 name += finddata.cFileName;
                 names.insert(name);
             }
@@ -51,7 +50,7 @@ int main(int argc, char** argv)
     }
 
     std::set<std::string> names;
-    ScanFiles(".", names);
+    ScanFiles("", names);
 
     for(std::set<std::string>::iterator it = exception_files.begin();
         it != exception_files.end(); ++it)
