@@ -45,6 +45,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "MD5Test", "MD5Test\MD5Test.
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "HashSetGenerator", "HashSetGenerator\HashSetGenerator.vcxproj", "{209C5E6D-1AC2-4A73-9D8D-31341D0FCDCC}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Md5Utils", "Md5Utils\Md5Utils.vcxproj", "{93B5DBE2-FE92-4C6F-AE63-A1510A16A11F}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Win32 = Debug|Win32
@@ -115,6 +117,10 @@ Global
 		{209C5E6D-1AC2-4A73-9D8D-31341D0FCDCC}.Debug|Win32.Build.0 = Debug|Win32
 		{209C5E6D-1AC2-4A73-9D8D-31341D0FCDCC}.Release|Win32.ActiveCfg = Release|Win32
 		{209C5E6D-1AC2-4A73-9D8D-31341D0FCDCC}.Release|Win32.Build.0 = Release|Win32
+		{93B5DBE2-FE92-4C6F-AE63-A1510A16A11F}.Debug|Win32.ActiveCfg = Debug|Win32
+		{93B5DBE2-FE92-4C6F-AE63-A1510A16A11F}.Debug|Win32.Build.0 = Debug|Win32
+		{93B5DBE2-FE92-4C6F-AE63-A1510A16A11F}.Release|Win32.ActiveCfg = Release|Win32
+		{93B5DBE2-FE92-4C6F-AE63-A1510A16A11F}.Release|Win32.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
