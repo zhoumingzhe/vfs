@@ -33,8 +33,7 @@ void UpdateManager::StartUpdate()
     lst.push_back(QPair<qint64, qint64>(0,4));
     lst.push_back(QPair<qint64, qint64>(5,2));
 
-    arguments.append(DownloadEntry(
-        QUrl::fromEncoded(QString("http://localhost/versionurl.txt").toLocal8Bit())));
+    arguments.append(DownloadEntry(QString("http://localhost/"),QString("versionurl.txt")));
     m_pMgr->append(arguments);
     QObject::disconnect(m_pMgr, SIGNAL(filecomplete(const QString&)), this, 0);
     QObject::connect(m_pMgr, SIGNAL(filecomplete(const QString&)),
@@ -53,9 +52,8 @@ void UpdateManager::VersionDownloadURLComplete( const QString &name )
     m_RemoteVersion = version.readAll().constData();
     if(m_RemoteVersion != m_LocalVersion)
     {
-        QString base = QString("http://localhost/") + m_RemoteVersion + "/hash.txt";
         QList<DownloadEntry> arguments;
-        arguments.append(DownloadEntry(QUrl::fromEncoded(base.toLocal8Bit())));
+        arguments.append(DownloadEntry(QString("http://localhost/") + m_RemoteVersion, "hash.txt"));
 
         QObject::connect(m_pMgr, SIGNAL(filecomplete(const QString&)),
             this, SLOT(HashFileDownloadComplete(const QString &)));
@@ -68,6 +66,7 @@ void UpdateManager::HashFileDownloadComplete( const QString &name )
     printf("hash file %s downloaded\n", name.toStdString().c_str());
 
     QObject::disconnect(m_pMgr, SIGNAL(filecomplete(const QString&)), this, 0);
+    QObject::connect(m_pMgr, SIGNAL(filecomplete(const QString&)), this, SLOT(FileDownloadComplete(const QString&)));
     LoadUpdateEntry(m_mapRemoteEntry, name);
     GenerateUpdateList();
     DoUpdate();
@@ -80,7 +79,15 @@ void UpdateManager::HashSetDownloadComplete( const QString &name )
 
 void UpdateManager::FileDownloadComplete( const QString &name )
 {
-
+    if(name.endsWith(".hs"))
+    {
+        QString unhashed = name;
+        unhashed.remove(-3, 3);
+        QList<QString> param;
+        printf("checking and download %s\n", unhashed.toStdString().c_str());
+        param.push_back(unhashed);
+        m_pChecker->append(param);
+    }
 }
 
 void UpdateManager::LoadUpdateEntry( QMap<QString, UpdateEntry>& entry, QString name )
@@ -147,13 +154,18 @@ void UpdateManager::DoUpdate()
         }
     }
     m_pChecker->append(entry);
+    foreach (QString s, entry)
+    {
+        QMap<QString,UpdateEntry>::iterator it = m_mapUpdate.find(s);
+        if(it != m_mapUpdate.end())
+            m_mapUpdate.erase(it);
+    }
 }
 
 void UpdateManager::FileCheckComplete(const CheckedEntry& entry )
 {
     QList<DownloadEntry> entries;
-    QString base = QString("http://localhost/") + m_RemoteVersion + "/" + entry.name;
-    entries.append(DownloadEntry(QUrl::fromEncoded(base.toLocal8Bit()), entry.filesize, entry.chunks));
+    entries.append(DownloadEntry(QString("http://localhost/") + m_RemoteVersion, entry.name, entry.filesize, entry.chunks));
     m_pMgr->append(entries);
 }
 

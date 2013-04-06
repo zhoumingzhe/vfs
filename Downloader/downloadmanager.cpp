@@ -2,6 +2,7 @@
 #include <QNetworkRequest>
 #include <QNetworkReply>
 #include <QTimer>
+#include <QDir>
 #include <stdio.h>
 #include "downloadmanager.h"
 DownloadManager::DownloadManager(QObject *parent)
@@ -20,15 +21,6 @@ void DownloadManager::append(const QList<DownloadEntry> &downloadlist)
     }
 }
 
-QString DownloadManager::saveFileName(const QUrl &url)
-{
-    QString path = url.path();
-    QString basename = QFileInfo(path).fileName();
-    printf("path = %s\n", path.toStdString().c_str());
-
-    return basename;
-}
-
 void DownloadManager::startNextDownload()
 {
     if (downloadQueue.isEmpty()) {
@@ -36,13 +28,14 @@ void DownloadManager::startNextDownload()
         return;
     }
     DownloadEntry entry = downloadQueue.dequeue();
-    currenturl = entry.url;
+    currenturl = QUrl::fromEncoded((entry.base + "/" + entry.name).toLocal8Bit());
     chunks = entry.chunks;
-    QString filename = saveFileName(currenturl);
-    output.setFileName(filename);
+    QDir d;
+    d.mkpath(QFileInfo(entry.name).dir().path());
+    output.setFileName(entry.name);
     if (!output.open(QIODevice::ReadWrite)) {
         fprintf(stderr, "Problem opening save file '%s' for download '%s': %s\n",
-                qPrintable(filename), currenturl.toEncoded().constData(),
+                qPrintable(entry.name), currenturl.toEncoded().constData(),
                 qPrintable(output.errorString()));
 
         startNextDownload();

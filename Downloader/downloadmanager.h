@@ -9,14 +9,16 @@
 
 struct DownloadEntry
 {
-    QUrl url;
+    QString base;
+    QString name;
     qint64 filesize;
     QList<QPair<qint64, qint64> > chunks;
     DownloadEntry(
-        const QUrl & u,
+        const QString & b,
+        const QString & n,
         qint64 fsize = -1,
         const QList<QPair<qint64, qint64> > &cks = QList<QPair<qint64, qint64> >() )
-    :url(u), filesize(fsize), chunks(cks)
+    :base(b), name(n), filesize(fsize), chunks(cks)
     {}
 };
 
@@ -27,7 +29,6 @@ public:
     DownloadManager(QObject *parent = 0);
 
     void append(const QList<DownloadEntry> &downloadlist);
-    QString saveFileName(const QUrl &url);
 
 signals:
     void finished();
