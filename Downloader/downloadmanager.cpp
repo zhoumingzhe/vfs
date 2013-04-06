@@ -5,13 +5,13 @@
 #include <stdio.h>
 #include "downloadmanager.h"
 DownloadManager::DownloadManager(QObject *parent)
-    : QObject(parent)
+    : QObject(parent),currentDownload(0)
 {
 }
 
 void DownloadManager::append(const QList<DownloadEntry> &downloadlist)
 {
-    if (downloadQueue.isEmpty())
+    if (downloadQueue.isEmpty() && !this->currentDownload)
         QTimer::singleShot(0, this, SLOT(startNextDownload()));
 
     foreach (DownloadEntry entry, downloadlist)
@@ -24,9 +24,7 @@ QString DownloadManager::saveFileName(const QUrl &url)
 {
     QString path = url.path();
     QString basename = QFileInfo(path).fileName();
-
-    if (basename.isEmpty())
-        basename = "download";
+    printf("path = %s\n", path.toStdString().c_str());
 
     return basename;
 }
@@ -76,6 +74,7 @@ void DownloadManager::downloadFinished()
     }
 
     currentDownload->deleteLater();
+    currentDownload = 0;
 
     if(chunks.size()>0)
         startNextChunk();
