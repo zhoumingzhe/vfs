@@ -59,7 +59,7 @@ void LoadHashSet( const std::string & name, std::vector<Md5Digest> & hash_set, o
 {
     hash_set.clear();
     length.offset = 0;
-    std::ifstream file(name);
+    std::ifstream file(name.c_str());
     file >> length.offset;
     std::string h;
     while(file>>h)

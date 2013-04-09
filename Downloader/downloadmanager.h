@@ -5,7 +5,7 @@
 #include <QObject>
 #include <QQueue>
 #include <QUrl>
-#include <QNetworkAccessManager>
+#include <QtNetwork/QNetworkAccessManager>
 
 struct DownloadEntry
 {

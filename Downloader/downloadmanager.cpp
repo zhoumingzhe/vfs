@@ -1,6 +1,6 @@
 #include <QFileInfo>
-#include <QNetworkRequest>
-#include <QNetworkReply>
+#include <QtNetwork/QNetworkRequest>
+#include <QtNetwork/QNetworkReply>
 #include <QTimer>
 #include <QDir>
 #include <stdio.h>

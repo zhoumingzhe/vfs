@@ -1,5 +1,5 @@
 #include <QTimer>
-#include <QtConcurrent/QtConcurrent>
+#include <QtConcurrentRun>
 #include <QFile>
 #include "hashchecker.h"
 #include "../VFS/IFile.h"

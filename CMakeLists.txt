@@ -54,5 +54,5 @@ add_subdirectory(HashSetGenerator)
 add_subdirectory(MD5Test)
 add_subdirectory(PackDirectory)
 add_subdirectory(ZlibTest)
-
+add_subdirectory(Downloader)
 
