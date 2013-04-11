@@ -341,15 +341,20 @@ void BlockFS::RemoveFile( const char* name )
     std::set<int>::iterator itset = itmd5->second.find(id);
     assert(itset != itmd5->second.end());
 
+
     BlockHeader header;
-    do
+    LoadBlockHeader(blockid, header);
+
+    int currentid = header.prev;
+    while(currentid != blockid)
     {
-        LoadBlockHeader(blockid, header);
+        LoadBlockHeader(currentid, header);
         assert(header.next >= 0 && "error block id");
         assert(header.prev >= 0 && "error block id");
-        m_pMgr->RecycleBlock(header.prev);
+        m_pMgr->RecycleBlock(currentid);
+        currentid = header.prev;
     }
-    while(header.prev != blockid);
+    m_pMgr->RecycleBlock(blockid);
 
     memset(&entry, 0, sizeof(entry));
     FlushEntry(id);
@@ -376,4 +381,9 @@ void BlockFS::ExportFileNames( std::vector<std::string>& names )
     {
         names.push_back(it->first);
     }
+}
+
+const std::vector<BlockFileEntry> & BlockFS::GetEntries()
+{
+    return m_entry;
 }

@@ -75,6 +75,7 @@ public:
 
     int AppendBlock(int end, int begin);
     void ExportFileNames(std::vector<std::string>& names);
+    const std::vector<BlockFileEntry> &GetEntries();
     //test only;
     IFile* First() const { return m_pFirst; }
 private:
