@@ -75,6 +75,7 @@ public:
 
     offset_type AppendBlock(offset_type end, offset_type begin);
     void ExportFileNames(std::vector<std::string>& names);
+    const std::vector<BlockFileEntry> &GetEntries();
     //test only;
     IFile* First() const { return m_pFirst; }
 private:
