@@ -40,4 +40,4 @@ set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 add_subdirectory(VFS)
 add_subdirectory(zlib)
 add_subdirectory(PackDirectory)
-
+add_subdirectory(BlockFSUnpackDirectory)

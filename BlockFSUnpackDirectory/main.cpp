@@ -10,7 +10,7 @@ int main()
 {
     _CrtSetDbgFlag ( _CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF );
     IFile::OpenMode mode = IFile::O_ReadOnly;
-    IFile *pFile = OpenDiskFile("test.pkg", mode);
+    IFile *pFile = OpenDiskFile("data.pkg", mode);
     BlockManager* pMgr = new BlockManager(pFile, mode==IFile::O_Truncate, 1024);
     BlockFS *pFS = new BlockFS(pMgr, mode);
 
@@ -23,6 +23,7 @@ int main()
         IFile* pTemp = OpenDiskFile(it->c_str(), IFile::O_Truncate);
         int length = pUnpackedFile->GetSize();
         char* buff = new char[length];
+        printf("Unpacking %s\n", it->c_str());
         pUnpackedFile->Read(buff, length);
         pTemp->Write(buff, length);
 
