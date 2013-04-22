@@ -354,8 +354,8 @@ void BlockFS::RemoveFile( const char* name )
     while(currentid != blockid)
     {
         LoadBlockHeader(currentid, header);
-        assert(header.next >= 0 && "error block id");
-        assert(header.prev >= 0 && "error block id");
+        assert(header.next.offset >= 0 && "error block id");
+        assert(header.prev.offset >= 0 && "error block id");
         m_pMgr->RecycleBlock(currentid);
         currentid = header.prev;
     }
