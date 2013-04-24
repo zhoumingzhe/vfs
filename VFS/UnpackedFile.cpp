@@ -149,7 +149,7 @@ int UnpackedFile::Write( const void* buffer, int size )
             //allocate blocks at the end
             int cacheid = m_pFS->AppendOrGetNextBlockId(m_Cacheid, m_Beginid);
             SetCacheState(cacheid, GetCacheSeq()+1);
-            if(size_left >= m_pFS->GetBlockDataSize())
+            //if(size_left >= m_pFS->GetBlockDataSize())
                 m_pFS->LoadBlockData(GetCacheid(), m_Cache);
             offset = CalcOffsetInCache(m_Current, GetCacheSeq());
             assert(offset==0);
