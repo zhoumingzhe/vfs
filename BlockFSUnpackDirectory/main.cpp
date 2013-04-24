@@ -6,11 +6,12 @@
 #include "../VFS/BlockFS.h"
 #include "../VFS/UnpackedFile.h"
 
-int main()
+int main(int argc, char** argv)
 {
     _CrtSetDbgFlag ( _CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF );
     IFile::OpenMode mode = IFile::O_ReadOnly;
-    IFile *pFile = OpenDiskFile("data.pkg", mode);
+    assert(argc>1);
+    IFile *pFile = OpenDiskFile(argv[1], mode);
     BlockManager* pMgr = new BlockManager(pFile, mode==IFile::O_Truncate, 1024);
     BlockFS *pFS = new BlockFS(pMgr, mode);
 
