@@ -169,7 +169,7 @@ offset_type UnpackedFile::Write( const void* buffer, offset_type size )
             offset_type next_seq;
             next_seq.offset = GetCacheSeq().offset + 1;
             SetCacheState(cacheid, next_seq);
-            if(size_left >= m_pFS->GetBlockDataSize())
+            //if(size_left >= m_pFS->GetBlockDataSize())
                 m_pFS->LoadBlockData(GetCacheid(), m_Cache);
             offset = CalcOffsetInCache(m_Current, GetCacheSeq());
             assert(offset.offset==0);
