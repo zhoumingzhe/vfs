@@ -141,6 +141,7 @@ void BlockManager::ReadEmptyBlockHeader( offset_type blockid, offset_type &heade
 
 void BlockManager::WriteEmptyBlockHeader( offset_type blockid, offset_type header )
 {
+    assert(header<blockid&&"Wrong Empty Block header");
     assert(blockid < m_Header.Blocks && "out of range");
     m_pFile->Seek(CalcOffset(blockid), IFile::S_Begin);
     m_pFile->Write(&header, offset_type(sizeof(header)));

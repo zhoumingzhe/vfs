@@ -51,7 +51,7 @@ BlockFS::BlockFS(BlockManager* pMgr, IFile::OpenMode mode):m_pMgr(pMgr),m_pFirst
     for (int i = 0; i < (int)m_entry.size(); ++i)
     {
         const BlockFileEntry& e = m_entry[i];
-        if(e.name != "")//empty entry
+        if(strcmp(e.name, ""))//empty entry
         {
             std::map<std::string, offset_type>::iterator itname
                 = m_nameIndex.find(e.name);
@@ -346,20 +346,29 @@ void BlockFS::RemoveFile( const char* name )
     std::set<offset_type>::iterator itset = itmd5->second.find(id);
     assert(itset != itmd5->second.end());
 
-
-    BlockHeader header;
-    LoadBlockHeader(blockid, header);
-
-    offset_type currentid = header.prev;
-    while(currentid != blockid)
+    if(itmd5->second.size()>1)
     {
-        LoadBlockHeader(currentid, header);
-        assert(header.next.offset >= 0 && "error block id");
-        assert(header.prev.offset >= 0 && "error block id");
-        m_pMgr->RecycleBlock(currentid);
-        currentid = header.prev;
+        UnpackedFile* pFile = CreateBlockFile(blockid, IFile::O_Write);
+        pFile->SetRefCount(pFile->GetRefCount()-1);
+        pFile->FlushHeaderToDisk();
+        delete pFile;
     }
-    m_pMgr->RecycleBlock(blockid);
+    else
+    {
+        BlockHeader header;
+        LoadBlockHeader(blockid, header);
+
+        offset_type currentid = header.prev;
+        while(currentid != blockid)
+        {
+            LoadBlockHeader(currentid, header);
+            assert(header.next.offset >= 0 && "error block id");
+            assert(header.prev.offset >= 0 && "error block id");
+            m_pMgr->RecycleBlock(currentid);
+            currentid = header.prev;
+        }
+        m_pMgr->RecycleBlock(blockid);
+    }
 
     memset(&entry, 0, sizeof(entry));
     FlushEntry(id);
